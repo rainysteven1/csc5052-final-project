@@ -1,0 +1,7 @@
+# Workbuddy environment configuration
+# Each workbuddy instance runs with its own config.
+
+environment: dev          # dev | staging | prod
+repo: rainysteven1/csc5052-final-project
+poll_interval: 30s
+port: 8080                # HTTP audit server port
