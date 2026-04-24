@@ -1,0 +1,83 @@
+seed = 42
+
+[speaksure.runtime]
+config_version = "speaksure-runtime-v1"
+context_provider = "config"
+asr_provider = "stub"
+asr_backend = "stub"
+# asr_backend = "onnx"
+# asr_backend = "grpc"
+asr_backend_grpc_target = "127.0.0.1:50052"
+asr_onnx_model_dir = "services/asr/models/onnx-community__whisper-large-v3-turbo"
+asr_grpc_target = "127.0.0.1:50052"
+agent_grpc_bind = "127.0.0.1:50051"
+asr_grpc_bind = "127.0.0.1:50052"
+agent_http_bind = "127.0.0.1:8000"
+# Monolith in-process mode:
+# asr_provider = "local"
+# Preferred microservice mode:
+# asr_provider = "grpc"
+#
+# Legacy direct HTTP mode to a teammate-owned ASR service:
+# asr_provider = "api"
+# asr_api_url = "http://127.0.0.1:8000/transcribe"
+#
+# Suggested gRPC binds for local microservices:
+# agent_grpc_target = "127.0.0.1:50051"
+#
+# MiniMax reasoning/feedback uses env vars:
+# MINIMAX_API_KEY=...
+# MINIMAX_BASE_URL=...
+# SPEAKSURE_LLM_MODEL=MiniMax-M2.7-highspeed
+lexical_provider = "rule"
+prosody_provider = "rule"
+disfluency_provider = "rule"
+
+[speaksure.wandb]
+project = "speaksure-runtime"
+mode = "disabled"
+
+[speaksure.contexts.interview.weights]
+lexical = 0.35
+prosody = 0.30
+disfluency = 0.20
+context = 0.15
+
+[speaksure.contexts.interview]
+style_constraints = ["避免过多弱化表达", "建议回答更直接"]
+
+[speaksure.contexts.presentation.weights]
+lexical = 0.30
+prosody = 0.35
+disfluency = 0.20
+context = 0.15
+
+[speaksure.contexts.presentation]
+style_constraints = ["保持节奏稳定", "控制长停顿"]
+
+[speaksure.contexts.academic.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.20
+context = 0.30
+
+[speaksure.contexts.academic]
+style_constraints = ["允许适度谨慎表达", "避免连续自我修正"]
+
+[speaksure.contexts.business.weights]
+lexical = 0.35
+prosody = 0.25
+disfluency = 0.20
+context = 0.20
+
+[speaksure.contexts.business]
+style_constraints = ["表达应直接清晰", "减少模糊承诺词"]
+
+[speaksure.contexts.casual.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25
+
+[speaksure.contexts.casual]
+style_constraints = ["自然表达即可"]

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package speaksure.v1;
+
+import "speaksure/v1/common.proto";
+
+message TranscribeRequest {
+  string audio_path = 1;
+  string scenario = 2;
+  string language_hint = 3;
+  string provider = 4;
+  string api_url = 5;
+  string transcript_override = 6;
+  repeated KeyValue metadata = 7;
+}
+
+message TranscribeResponse {
+  string transcript = 1;
+  string provider = 2;
+  string response_model = 3;
+  string language = 4;
+  repeated string warnings = 5;
+  repeated KeyValue metadata = 6;
+}
+
+service AsrService {
+  rpc Transcribe(TranscribeRequest) returns (TranscribeResponse);
+}

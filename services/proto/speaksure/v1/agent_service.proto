@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package speaksure.v1;
+
+import "speaksure/v1/common.proto";
+
+message AnalyzeRequest {
+  string audio_path = 1;
+  string scenario = 2;
+  string output_path = 3;
+  string transcript_override = 4;
+  string config_path = 5;
+  bool upload_wandb = 6;
+  repeated KeyValue metadata = 7;
+}
+
+message AnalyzeResponse {
+  string status = 1;
+  string result_json = 2;
+  string result_path = 3;
+  double overall_score = 4;
+  string level = 5;
+  string summary = 6;
+  repeated string dominant_causes = 7;
+  repeated string warnings = 8;
+  repeated string errors = 9;
+  AnalysisDigest digest = 10;
+}
+
+service AgentService {
+  rpc Analyze(AnalyzeRequest) returns (AnalyzeResponse);
+}

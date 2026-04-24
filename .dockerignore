@@ -11,12 +11,10 @@ __pycache__/
 *.py[cod]
 *.so
 
-# Local runtime outputs should be mounted, not baked into the image.
-runtime/agent/checkpoints/
-runtime/agent/data/
-runtime/agent/wandb/
-runtime/agent/__pycache__/
-runtime/agent/tests/
+# Local service outputs should be mounted, not baked into the image.
+services/agent/data/
+services/agent/__pycache__/
+services/agent/tests/
 
 # Repo data and trainer artifacts are mounted at runtime.
 data/

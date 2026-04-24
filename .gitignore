@@ -13,6 +13,7 @@ wheels/
 .venv
 
 .env*
+!.env.example
 
 .claude/
 .vscode/

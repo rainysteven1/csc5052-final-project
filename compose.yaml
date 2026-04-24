@@ -1,0 +1,68 @@
+services:
+  asr:
+    build:
+      context: .
+      dockerfile: services/asr/Dockerfile
+      args:
+        UV_EXPORT_GROUP: asr_runtime
+    container_name: speaksure-asr
+    env_file:
+      - .env
+    environment:
+      SPEAKSURE_REPO_ROOT: /app
+      SPEAKSURE_AGENT_SERVICE_ROOT: /app/services/agent
+      SPEAKSURE_AGENT_DATA_ROOT: /app/services/agent/data
+    ports:
+      - "50052:50052"
+    volumes:
+      - ./services/agent/config:/app/services/agent/config:ro
+      - ./services/agent/data:/app/services/agent/data
+      - ./services/agent/data/samples:/app/services/agent/data/samples:ro
+      - ./services/asr/models:/app/services/asr/models
+
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+      args:
+        UV_EXPORT_GROUP: agent_grpc
+    container_name: speaksure-agent
+    depends_on:
+      - asr
+    env_file:
+      - .env
+    environment:
+      SPEAKSURE_REPO_ROOT: /app
+      SPEAKSURE_AGENT_SERVICE_ROOT: /app/services/agent
+      SPEAKSURE_AGENT_DATA_ROOT: /app/services/agent/data
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./services/agent/config:/app/services/agent/config:ro
+      - ./services/agent/data:/app/services/agent/data
+      - ./services/agent/data/samples:/app/services/agent/data/samples:ro
+      - ./services/agent/models:/app/services/agent/models
+
+  agent-http:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+      args:
+        UV_EXPORT_GROUP: agent_http
+    container_name: speaksure-agent-http
+    depends_on:
+      - asr
+    command: ["python", "services/agent/http_main.py"]
+    env_file:
+      - .env
+    environment:
+      SPEAKSURE_REPO_ROOT: /app
+      SPEAKSURE_AGENT_SERVICE_ROOT: /app/services/agent
+      SPEAKSURE_AGENT_DATA_ROOT: /app/services/agent/data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/agent/config:/app/services/agent/config:ro
+      - ./services/agent/data:/app/services/agent/data
+      - ./services/agent/data/samples:/app/services/agent/data/samples:ro
+      - ./services/agent/models:/app/services/agent/models

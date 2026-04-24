@@ -1,0 +1,6 @@
+[submodule "NeMo"]
+	path = NeMo
+	url = https://github.com/NVIDIA/NeMo.git
+[submodule "Qwen3-ASR"]
+	path = Qwen3-ASR
+	url = https://github.com/QwenLM/Qwen3-ASR.git
