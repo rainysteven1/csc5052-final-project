@@ -1,0 +1,156 @@
+name: Release From Tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag matches pyproject.toml version
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          PYPROJECT_VERSION="$(python - <<'PY'
+          from pathlib import Path
+          import tomllib
+
+          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          print(data["project"]["version"])
+          PY
+          )"
+
+          EXPECTED_TAG="v${PYPROJECT_VERSION}"
+
+          echo "pyproject.toml version: ${PYPROJECT_VERSION}"
+          echo "incoming tag: ${TAG_NAME}"
+
+          if [ "${TAG_NAME}" != "${EXPECTED_TAG}" ]; then
+            echo "Tag ${TAG_NAME} does not match pyproject.toml version ${EXPECTED_TAG}"
+            exit 1
+          fi
+
+          {
+            echo "PYPROJECT_VERSION=${PYPROJECT_VERSION}"
+            echo "EXPECTED_TAG=${EXPECTED_TAG}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/agent/frontend/package-lock.json
+
+      - name: Build frontend bundle
+        working-directory: services/agent/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare release artifacts
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p release-artifacts
+          mkdir -p release-artifacts/submission-bundle/frontend-dist
+
+          git archive \
+            --format=zip \
+            --output="release-artifacts/SpeakSure-${TAG_NAME}-source.zip" \
+            HEAD
+
+          FRONTEND_DIST_ZIP="${GITHUB_WORKSPACE}/release-artifacts/SpeakSure-${TAG_NAME}-frontend-dist.zip"
+
+          (
+            cd services/agent/frontend/dist
+            zip -r "${FRONTEND_DIST_ZIP}" .
+          )
+
+          cp README.md release-artifacts/submission-bundle/README.md
+          cp services/agent/README.md release-artifacts/submission-bundle/AGENT_SERVICE_README.md
+          cp services/agent/frontend/README.md release-artifacts/submission-bundle/FRONTEND_README.md
+          cp pyproject.toml release-artifacts/submission-bundle/pyproject.toml
+          cp services/agent/frontend/package.json release-artifacts/submission-bundle/frontend-package.json
+          cp -r services/agent/frontend/dist/. release-artifacts/submission-bundle/frontend-dist/
+
+          cat > "release-artifacts/SpeakSure-${TAG_NAME}-release-notes.txt" <<EOF
+          SpeakSure release bundle for tag ${TAG_NAME}
+
+          Included files:
+          - SpeakSure-${TAG_NAME}-source.zip
+          - SpeakSure-${TAG_NAME}-frontend-dist.zip
+          - SpeakSure-${TAG_NAME}-submission-bundle.zip
+
+          Suggested local run:
+          1. python services/agent/http_main.py
+          2. Serve services/agent/frontend/dist with any static file server
+          EOF
+
+          cat > "release-artifacts/submission-bundle/DEPLOYMENT.md" <<EOF
+          # SpeakSure Deployment Notes
+
+          Version: ${TAG_NAME}
+
+          ## Included in this submission bundle
+
+          - Repository root README
+          - Agent service README
+          - Frontend README
+          - \`pyproject.toml\`
+          - Frontend \`package.json\`
+          - Built frontend static assets under \`frontend-dist/\`
+
+          ## Local backend run
+
+          \`\`\`bash
+          python services/agent/http_main.py
+          \`\`\`
+
+          ## Frontend static preview
+
+          Serve the contents of \`frontend-dist/\` with any static file server.
+
+          ## Tag / version rule
+
+          This release was generated from Git tag ${TAG_NAME}, which matches the version in \`pyproject.toml\`.
+          EOF
+
+          (
+            cd release-artifacts/submission-bundle
+            zip -r "../SpeakSure-${TAG_NAME}-submission-bundle.zip" .
+          )
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: SpeakSure ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release-artifacts/SpeakSure-${{ github.ref_name }}-source.zip
+            release-artifacts/SpeakSure-${{ github.ref_name }}-frontend-dist.zip
+            release-artifacts/SpeakSure-${{ github.ref_name }}-submission-bundle.zip
+            release-artifacts/SpeakSure-${{ github.ref_name }}-release-notes.txt
+          body: |
+            Automated release for `SpeakSure ${{ github.ref_name }}`.
+
+            Version summary:
+            - Git tag: `${{ github.ref_name }}`
+            - `pyproject.toml` version: `${{ env.PYPROJECT_VERSION }}`
+
+            This release is triggered by pushing a Git tag and includes:
+            - full repository source snapshot
+            - built frontend static assets
+            - a short release notes text file for coursework/demo handoff

@@ -187,8 +187,8 @@ def _suggest_onnx_download(raw_path: str) -> str | None:
 
     if "whisper-large-v3-turbo" in normalized:
         return (
-            'huggingface-cli download onnx-community/whisper-large-v3-turbo '
-            f'--local-dir {normalized} '
+            "huggingface-cli download onnx-community/whisper-large-v3-turbo "
+            f"--local-dir {normalized} "
             '--include "config.json" '
             '--include "generation_config.json" '
             '--include "preprocessor_config.json" '
@@ -205,8 +205,8 @@ def _suggest_onnx_download(raw_path: str) -> str | None:
 
     if "whisper-large-v3-ONNX" in normalized:
         return (
-            'huggingface-cli download onnx-community/whisper-large-v3-ONNX '
-            f'--local-dir {normalized} '
+            "huggingface-cli download onnx-community/whisper-large-v3-ONNX "
+            f"--local-dir {normalized} "
             '--include "config.json" '
             '--include "generation_config.json" '
             '--include "preprocessor_config.json" '
@@ -317,8 +317,7 @@ def _summary_panel(
     )
     summary.add_row(
         "routing",
-        f"{_badge(provider, kind='status')} via {_badge(provider_source)}"
-        f" -> {_badge(backend_name, kind='status')}",
+        f"{_badge(provider, kind='status')} via {_badge(provider_source)} -> {_badge(backend_name, kind='status')}",
     )
     return _section_panel(
         "Runtime Summary",
@@ -403,7 +402,7 @@ def _build_report() -> Group:
         _badge(provider_source),
     )
     environment.add_row("minimax base url", _fmt(os.getenv("MINIMAX_BASE_URL", "https://api.minimaxi.chat/v1")))
-    environment.add_row("llm model", _fmt(os.getenv("SPEAKSURE_LLM_MODEL", "MiniMax-M2.7-highspeed")))
+    environment.add_row("llm model", _fmt(os.getenv("SPEAKSURE_LLM_MODEL", "MiniMax-M2.7")))
     environment.add_row(
         "wandb mode",
         _status_label("warn", "disabled")

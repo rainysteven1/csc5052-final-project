@@ -8,6 +8,7 @@ from typing import Any, TypedDict
 from services.agent.src.state import AnalysisState
 
 NodeFn = Callable[[AnalysisState], AnalysisState]
+WorkflowProgressCallback = Callable[[dict[str, Any]], None]
 
 
 class WorkflowExecutionError(RuntimeError):

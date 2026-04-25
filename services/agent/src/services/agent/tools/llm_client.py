@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,9 +12,10 @@ from openai import OpenAI
 
 from services.agent.src.config import get_config
 from services.agent.src.logger import logger
+from services.agent.src.services.agent.tools.prompt_loader import render_prompt_template
 
 DEFAULT_MINIMAX_BASE_URL = "https://api.minimaxi.chat/v1"
-DEFAULT_MINIMAX_MODEL = "MiniMax-M2.7-highspeed"
+DEFAULT_MINIMAX_MODEL = "MiniMax-M2.7"
 
 
 class LLMClientError(RuntimeError):
@@ -59,6 +61,68 @@ def _strip_code_fence(text: str) -> str:
     return cleaned.strip("`").strip()
 
 
+def _smart_loads(raw: str) -> Any:
+    """Best-effort JSON loader for slightly messy model responses."""
+    if not raw:
+        return {}
+
+    try:
+        return json.loads(raw)
+    except Exception:
+        pass
+
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(raw):
+        if char not in "[{":
+            continue
+        try:
+            payload, _ = decoder.raw_decode(raw[index:])
+            return payload
+        except Exception:
+            continue
+    return {}
+
+
+def _try_parse(raw: str) -> dict[str, Any] | None:
+    """Try direct JSON, single-item list, then fenced JSON extraction."""
+    try:
+        data = _smart_loads(raw)
+        if isinstance(data, dict) and data:
+            return data
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            logger.info("  JSON parse: list fallback succeeded")
+            return data[0]
+    except Exception:
+        pass
+
+    match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
+    if not match:
+        return None
+
+    json_str = match.group(1).strip()
+    try:
+        data = _smart_loads(json_str)
+        if isinstance(data, dict) and data:
+            logger.info("  JSON parse: markdown extraction succeeded")
+            return data
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            logger.info("  JSON parse: markdown + list fallback succeeded")
+            return data[0]
+    except Exception:
+        return None
+    return None
+
+
+def _extract_json_from_response(raw: str) -> dict[str, Any] | None:
+    """Try parsing the raw response with lightweight recovery."""
+    result = _try_parse(raw)
+    if result is not None:
+        return result
+
+    logger.warning("  Initial JSON parse failed")
+    return None
+
+
 class RuntimeLLMClient:
     """Small OpenAI-compatible client for MiniMax-backed JSON generation."""
 
@@ -80,17 +144,20 @@ class RuntimeLLMClient:
     def model(self) -> str:
         return self.config.model
 
-    def chat_json(self, *, system_prompt: str, user_prompt: str) -> dict[str, Any]:
-        logger.info(f"[LLM] Calling {self.provider} model {self.model} for structured runtime output")
+    def _create_completion(
+        self,
+        *,
+        messages: list[dict[str, str]],
+        temperature: float,
+        response_format: dict[str, str] | None = None,
+    ) -> str:
         kwargs: dict[str, Any] = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": 0.2,
-            "response_format": {"type": "json_object"},
+            "messages": messages,
+            "temperature": temperature,
         }
+        if response_format is not None:
+            kwargs["response_format"] = response_format
         if self._seed is not None:
             kwargs["seed"] = self._seed
 
@@ -102,8 +169,66 @@ class RuntimeLLMClient:
         content = response.choices[0].message.content or ""
         if not content.strip():
             raise LLMClientError("LLM returned an empty response.")
+        return content
 
-        try:
-            return json.loads(_strip_code_fence(content))
-        except json.JSONDecodeError as exc:
-            raise LLMClientError("LLM did not return valid JSON.") from exc
+    def _repair_json_response(
+        self,
+        *,
+        raw_response: str,
+        schema_name: str,
+        schema_json: str,
+    ) -> dict[str, Any] | None:
+        logger.warning("[LLM] Attempting structured repair for malformed JSON output")
+        repair_variables = {
+            "schema_name": schema_name,
+            "schema_json": schema_json,
+            "raw_response": raw_response,
+        }
+        content = self._create_completion(
+            messages=[
+                {
+                    "role": "system",
+                    "content": render_prompt_template("json_repair_system", variables=repair_variables),
+                },
+                {
+                    "role": "user",
+                    "content": render_prompt_template("json_repair_user", variables=repair_variables),
+                },
+            ],
+            temperature=0.0,
+            response_format={"type": "json_object"},
+        )
+        return _extract_json_from_response(_strip_code_fence(content))
+
+    def chat_json(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        repair_schema_name: str | None = None,
+        repair_schema_json: str | None = None,
+    ) -> dict[str, Any]:
+        logger.info(f"[LLM] Calling {self.provider} model {self.model} for structured runtime output")
+        content = self._create_completion(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.2,
+            response_format={"type": "json_object"},
+        )
+
+        payload = _extract_json_from_response(_strip_code_fence(content))
+        if payload is not None:
+            return payload
+
+        if repair_schema_name and repair_schema_json:
+            repaired = self._repair_json_response(
+                raw_response=content,
+                schema_name=repair_schema_name,
+                schema_json=repair_schema_json,
+            )
+            if repaired is not None:
+                return repaired
+
+        raise LLMClientError("LLM did not return valid JSON.")

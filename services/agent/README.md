@@ -35,6 +35,7 @@ audio -> preprocess -> ASR -> segmentation -> lexical -> prosody -> disfluency -
 - `cli.py`：薄 CLI 壳子，只负责启动 `services/agent` 内部应用
 - `services/agent/src/app/cli_service.py`：Typer CLI 实现，包含 `analyze` 和 `analyze-samples`
 - `services/agent/config/config.toml`：Agent 服务配置，包含 `speaksure.contexts.*` 场景权重
+- `services/agent/config/prompts/`：运行时 LLM prompt 文档模板，`reasoning` / `feedback` 都从这里加载
 - `services/agent/src/state.py`：`AnalysisState`
 - `services/agent/src/schemas/analysis.py`：统一 schema
 - `services/agent/src/workflow.py`：对外工作流入口，保持 CLI / 测试调用稳定
@@ -217,8 +218,46 @@ just doctor-live 1
 ```bash
 export MINIMAX_API_KEY=...
 export MINIMAX_BASE_URL=...
-export SPEAKSURE_LLM_MODEL=MiniMax-M2.7-highspeed
+export SPEAKSURE_LLM_MODEL=MiniMax-M2.7
 ```
+
+### Prompt 模板
+
+`reasoning` 和 `feedback` 不再把 prompt 固定写死在节点代码里，默认改为从下面这些文档读取：
+
+- `services/agent/config/prompts/reasoning_system.md`
+- `services/agent/config/prompts/reasoning_user.md`
+- `services/agent/config/prompts/feedback_system.md`
+- `services/agent/config/prompts/feedback_user.md`
+- `services/agent/config/prompts/json_repair_system.md`
+- `services/agent/config/prompts/json_repair_user.md`
+- `services/agent/config/prompts/schemas/reasoning_result.json`
+- `services/agent/config/prompts/schemas/feedback_segments_result.json`
+
+默认路径在 `services/agent/config/config.toml` 里配置：
+
+```toml
+[speaksure.prompts]
+reasoning_system = "prompts/reasoning_system.md"
+reasoning_user = "prompts/reasoning_user.md"
+feedback_system = "prompts/feedback_system.md"
+feedback_user = "prompts/feedback_user.md"
+json_repair_system = "prompts/json_repair_system.md"
+json_repair_user = "prompts/json_repair_user.md"
+reasoning_repair_schema = "prompts/schemas/reasoning_result.json"
+feedback_repair_schema = "prompts/schemas/feedback_segments_result.json"
+```
+
+这些路径默认相对于 `config.toml` 所在目录解析，所以你可以直接把 system prompt 按文档格式写在这些 `.md` 文件里，而不是改 Python 代码。
+当上游 LLM 返回的 JSON 解析失败时，运行时会再走一轮 `json_repair_*` prompt，并读取对应的 `*_repair_schema` JSON 示例，把原始输出重整成合法 JSON。
+
+如果你想确认“这次实际发给模型的 prompt 到底是什么”，可以先开：
+
+```bash
+export SPEAKSURE_DEBUG_PROMPTS=1
+```
+
+开启后，导出的结果 JSON 里会带上 `meta.llm_prompts`，包含渲染后的 system/user prompt 和模板路径，方便直接排查 prompt 是否生效。
 
 ### gRPC 微服务
 
@@ -392,6 +431,12 @@ agent_grpc_target = "127.0.0.1:50051"
 just run-agent-http
 ```
 
+如果你要坚持直接用系统 Python，也可以：
+
+```bash
+python services/agent/http_main.py
+```
+
 最小 REST 接口：
 
 - `GET /api/v1/health`
@@ -399,6 +444,8 @@ just run-agent-http
 - `POST /api/v1/analyses`
 - `GET /api/v1/analyses/{analysis_id}`
 - `GET /api/v1/analyses/{analysis_id}/result`
+- `GET /api/v1/analyses/{analysis_id}/events`（SSE 实时事件流）
+- `POST /api/v1/replays/load`（从本机结果 JSON 加载静态回放）
 
 提交分析任务示例：
 
@@ -411,8 +458,48 @@ curl -X POST http://127.0.0.1:8000/api/v1/analyses \
 前端推荐调用方式：
 
 - 浏览器 / Web 前端直接请求 HTTP API；
+- 实时进度场景直接连 `GET /api/v1/analyses/{analysis_id}/events`，按 SSE 消费 `node_started` / `node_completed` / `analysis_completed`；
+- 静态演示场景可以直接把 `/tmp/...json` 这类结果文件路径 POST 到 `/api/v1/replays/load`；
 - `services/agent` 内部仍然可以通过 gRPC 调 `services/asr`；
 - 如果后续还要加鉴权、用户体系、历史记录，再额外包一层 `services/api` 也不迟。
+
+### Live Frontend
+
+仓库里已经加了一个 Vite + React + TypeScript + shadcn-ui 风格的实时前端：
+
+- `services/agent/frontend/`
+
+它支持：
+
+- 上传音频
+- 创建分析任务
+- 通过 SSE 看当前跑到哪个 node
+- 实时查看每个 node 的 payload
+- 节点专属可视化卡片
+- 从本机结果 JSON 做静态回放
+- 回放模式的播放 / 暂停 / 步进控制
+- 渲染最终结果 JSON
+
+本地联调方式：
+
+先启动后端：
+
+```bash
+cd /root/private_data/workspace/csc5052-final-project
+python services/agent/http_main.py
+```
+
+再启动前端：
+
+```bash
+cd /root/private_data/workspace/csc5052-final-project/services/agent/frontend
+npm install
+npm run dev
+```
+
+默认前端地址：
+
+- `http://127.0.0.1:5173`
 
 ### 队友 ASR API
 

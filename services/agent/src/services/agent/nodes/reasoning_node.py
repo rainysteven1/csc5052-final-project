@@ -12,11 +12,17 @@ from services.agent.src.services.agent.tools.llm_client import (
     RuntimeLLMClient,
     resolve_runtime_llm_config,
 )
+from services.agent.src.services.agent.tools.prompt_loader import (
+    load_prompt_template,
+    prompt_debug_enabled,
+    render_prompt_template,
+    resolve_prompt_template_path,
+)
 from services.agent.src.services.agent.tools.scorer import score_state
 from services.agent.src.state import AnalysisState
 
 
-def _build_reasoning_user_prompt(state: AnalysisState, score_payload: ScorePayload) -> str:
+def _build_reasoning_prompt_variables(state: AnalysisState, score_payload: ScorePayload) -> dict[str, str]:
     segment_payload = []
     for segment in state.segments:
         segment_payload.append(
@@ -35,12 +41,10 @@ def _build_reasoning_user_prompt(state: AnalysisState, score_payload: ScorePaylo
         "segments": segment_payload,
         "warnings": state.warnings,
     }
-    return (
-        "You are a public speaking coach. Based on the structured runtime analysis below, "
-        "write a concise overall summary in Chinese.\n"
-        "Return JSON only with keys: summary, dominant_causes, coaching_focus.\n\n"
-        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
-    )
+    return {
+        "scenario": state.scenario,
+        "payload_json": json.dumps(payload, ensure_ascii=False, indent=2),
+    }
 
 
 def apply_reasoning(state: AnalysisState) -> AnalysisState:
@@ -63,12 +67,21 @@ def apply_reasoning(state: AnalysisState) -> AnalysisState:
     if llm_cfg.enabled:
         try:
             client = RuntimeLLMClient(llm_cfg)
+            prompt_variables = _build_reasoning_prompt_variables(state, score_payload)
+            system_prompt = render_prompt_template("reasoning_system", variables=prompt_variables)
+            user_prompt = render_prompt_template("reasoning_user", variables=prompt_variables)
+            if prompt_debug_enabled():
+                state.meta.setdefault("llm_prompts", {})["reasoning"] = {
+                    "system_template_path": str(resolve_prompt_template_path("reasoning_system")),
+                    "user_template_path": str(resolve_prompt_template_path("reasoning_user")),
+                    "system_prompt": system_prompt,
+                    "user_prompt": user_prompt,
+                }
             llm_payload = client.chat_json(
-                system_prompt=(
-                    "You help a Chinese-speaking runtime produce compact, actionable speaking analysis summaries. "
-                    "Never invent metrics. Only summarize the provided evidence."
-                ),
-                user_prompt=_build_reasoning_user_prompt(state, score_payload),
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                repair_schema_name="ReasoningResult",
+                repair_schema_json=load_prompt_template("reasoning_repair_schema"),
             )
             llm_summary = str(llm_payload.get("summary", "")).strip()
             if llm_summary:

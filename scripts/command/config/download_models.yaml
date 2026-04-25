@@ -1,0 +1,211 @@
+defaults:
+  hf_endpoint: "https://hf-mirror.com"
+  disable_xet: true
+  download_timeout: 60
+  etag_timeout: 30
+  max_workers: 2
+  onnx_match_keyword: "int8"
+  onnx_common_patterns:
+    - "config.json"
+    - "generation_config.json"
+    - "preprocessor_config.json"
+    - "feature_extractor.json"
+    - "processor_config.json"
+    - "tokenizer.json"
+    - "tokenizer_config.json"
+    - "special_tokens_map.json"
+    - "added_tokens.json"
+    - "normalizer.json"
+    - "vocab.json"
+    - "vocab.txt"
+    - "merges.txt"
+    - "sentencepiece.bpe.model"
+    - "spiece.model"
+  non_onnx_common_patterns:
+    - "config.json"
+    - "generation_config.json"
+    - "preprocessor_config.json"
+    - "feature_extractor.json"
+    - "processor_config.json"
+    - "tokenizer.json"
+    - "tokenizer_config.json"
+    - "special_tokens_map.json"
+    - "added_tokens.json"
+    - "normalizer.json"
+    - "vocab.json"
+    - "vocab.txt"
+    - "merges.txt"
+    - "sentencepiece.bpe.model"
+    - "spiece.model"
+  non_onnx_weight_priority:
+    - ["model.safetensors"]
+    - ["model.safetensors.index.json", "model-*.safetensors"]
+    - ["pytorch_model.bin"]
+    - ["pytorch_model.bin.index.json", "pytorch_model-*.bin"]
+
+models:
+  "1":
+    repo_id: "onnx-community/whisper-large-v3-turbo"
+    local_dir: "services/asr/models/onnx-community__whisper-large-v3-turbo"
+    title: "Whisper ONNX"
+    note: "Best CPU default; downloads only the minimal int8 merged-decoder files."
+    allow_patterns:
+      - "config.json"
+      - "generation_config.json"
+      - "preprocessor_config.json"
+      - "tokenizer.json"
+      - "tokenizer_config.json"
+      - "merges.txt"
+      - "vocab.json"
+      - "normalizer.json"
+      - "added_tokens.json"
+      - "special_tokens_map.json"
+      - "onnx/encoder_model_int8.onnx"
+      - "onnx/decoder_model_merged_int8.onnx"
+  "2":
+    repo_id: "onnx-community/pyannote-segmentation-3.0"
+    local_dir: "services/asr/models/onnx-community__pyannote-segmentation-3.0"
+    title: "Segmentation ONNX"
+    note: "CPU-friendly VAD / segmentation."
+    dynamic_onnx_int8_selection: true
+  "3":
+    repo_id: "pyannote/segmentation-3.0"
+    local_dir: "services/asr/models/pyannote__segmentation-3.0"
+    title: "Segmentation (original)"
+    note: "Requires accepting the gated model terms on Hugging Face and setting HF_TOKEN."
+    requires_token: true
+    dynamic_weight_selection: true
+  "4":
+    repo_id: "papluca/xlm-roberta-base-language-detection"
+    local_dir: "services/agent/models/papluca__xlm-roberta-base-language-detection"
+    title: "Language detection"
+    note: "Transcript-level language identification."
+    dynamic_weight_selection: true
+  "5":
+    repo_id: "FireRedTeam/FireRedPunc"
+    local_dir: "services/agent/models/FireRedTeam__FireRedPunc"
+    title: "Punctuation restoration (ZH/EN)"
+    note: "Recommended default for mixed Chinese and English."
+    allow_patterns:
+      - "config.yaml"
+      - "model.pth.tar"
+      - "out_dict"
+      - "chinese-bert-wwm-ext_vocab.txt"
+      - "chinese-lert-base/added_tokens.json"
+      - "chinese-lert-base/config.json"
+      - "chinese-lert-base/pytorch_model.bin"
+      - "chinese-lert-base/special_tokens_map.json"
+      - "chinese-lert-base/tokenizer.json"
+      - "chinese-lert-base/tokenizer_config.json"
+      - "chinese-lert-base/vocab.txt"
+  "6":
+    repo_id: "felflare/bert-restore-punctuation"
+    local_dir: "services/agent/models/felflare__bert-restore-punctuation"
+    title: "Punctuation restoration (EN)"
+    note: "Lighter English-only fallback."
+    dynamic_weight_selection: true
+  "7":
+    repo_id: "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    local_dir: "services/agent/models/audeering__wav2vec2-large-robust-12-ft-emotion-msp-dim"
+    title: "Emotion / prosody proxy"
+    note: "Emotion and prosody proxy features."
+    dynamic_weight_selection: true
+  "8":
+    repo_id: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    local_dir: "services/agent/models/sentence-transformers__paraphrase-multilingual-mpnet-base-v2"
+    title: "Semantic embeddings"
+    note: "Multilingual embeddings / retrieval."
+    dynamic_weight_selection: true
+    extra_patterns:
+      - "modules.json"
+      - "config_sentence_transformers.json"
+      - "1_Pooling/config.json"
+
+presets:
+  cpu-minimal:
+    title: "CPU recommended minimal set"
+    note: "Whisper ONNX + segmentation ONNX + language detection + FireRedPunc"
+    model_codes: ["1", "2", "4", "5"]
+    recommended: true
+  full-demo:
+    title: "Full local demo set"
+    note: "Recommended set + emotion / prosody proxy + semantic embeddings"
+    model_codes: ["1", "2", "4", "5", "7", "8"]
+    recommended: false
+
+recommended_codes: ["1", "2", "4", "5"]
+
+wizard:
+  title: "Model Download Wizard"
+  preset_prompt: "Choose a mode"
+  custom_label: "Custom step-by-step selection"
+  custom_note: "Choose each model interactively"
+  steps:
+    - key: "asr"
+      title: "ASR model"
+      type: "single_choice"
+      prompt: "Pick one"
+      default: "1"
+      options:
+        - value: "0"
+          label: "Skip"
+        - value: "1"
+          label: "Whisper ONNX"
+          description: "recommended"
+          recommended: true
+          model_codes: ["1"]
+    - key: "vad"
+      title: "VAD / segmentation"
+      type: "single_choice"
+      prompt: "Pick one"
+      default: "1"
+      options:
+        - value: "0"
+          label: "Skip"
+        - value: "1"
+          label: "ONNX version"
+          description: "recommended"
+          recommended: true
+          model_codes: ["2"]
+        - value: "2"
+          label: "Original pyannote"
+          description: "requires HF_TOKEN"
+          model_codes: ["3"]
+    - key: "language"
+      title: "Transcript language detection"
+      type: "confirm"
+      prompt: "Download transcript language detection?"
+      default: true
+      model_codes: ["4"]
+    - key: "punctuation"
+      title: "Punctuation restoration"
+      type: "single_choice"
+      prompt: "Pick one"
+      default: "1"
+      options:
+        - value: "0"
+          label: "Skip"
+        - value: "1"
+          label: "FireRedPunc"
+          description: "recommended for ZH/EN"
+          recommended: true
+          model_codes: ["5"]
+        - value: "2"
+          label: "bert-restore-punctuation"
+          description: "English"
+          model_codes: ["6"]
+        - value: "3"
+          label: "Download both"
+          model_codes: ["5", "6"]
+    - key: "emotion"
+      title: "Emotion / prosody proxy"
+      type: "confirm"
+      prompt: "Download emotion / prosody proxy model?"
+      default: false
+      model_codes: ["7"]
+    - key: "embeddings"
+      title: "Semantic embeddings"
+      type: "confirm"
+      prompt: "Download semantic embedding model?"
+      default: false
+      model_codes: ["8"]

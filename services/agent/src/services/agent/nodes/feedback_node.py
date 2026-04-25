@@ -13,6 +13,12 @@ from services.agent.src.services.agent.tools.llm_client import (
     RuntimeLLMClient,
     resolve_runtime_llm_config,
 )
+from services.agent.src.services.agent.tools.prompt_loader import (
+    load_prompt_template,
+    prompt_debug_enabled,
+    render_prompt_template,
+    resolve_prompt_template_path,
+)
 from services.agent.src.services.agent.tools.text_rewrite import build_lexical_rewrite
 from services.agent.src.state import AnalysisState
 
@@ -98,7 +104,7 @@ def _build_feedback_fallback(state: AnalysisState) -> list[FeedbackOutput]:
     return feedback_outputs
 
 
-def _build_feedback_user_prompt(state: AnalysisState) -> str:
+def _build_feedback_prompt_variables(state: AnalysisState) -> dict[str, str]:
     segment_payload: list[dict[str, Any]] = []
     lexical_by_segment = {item.segment_id: item for item in state.agent_outputs.lexical}
     prosody_by_segment = {item.segment_id: item for item in state.agent_outputs.prosody}
@@ -127,12 +133,11 @@ def _build_feedback_user_prompt(state: AnalysisState) -> str:
         "style_constraints": state.agent_outputs.context.style_constraints,
         "segments": segment_payload,
     }
-    return (
-        "Generate per-segment speaking feedback in Chinese. Return JSON only with a top-level key `segments`.\n"
-        "Each segment item must contain: segment_id, severity, focus_tags, reason, rewrite, practice, practice_steps.\n"
-        "Keep rewrite concise, practical, and more direct than the original.\n\n"
-        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
-    )
+    return {
+        "scenario": state.scenario,
+        "style_constraints": "、".join(state.agent_outputs.context.style_constraints) or "无额外风格约束",
+        "payload_json": json.dumps(payload, ensure_ascii=False, indent=2),
+    }
 
 
 def _apply_llm_feedback(state: AnalysisState, fallback_outputs: list[FeedbackOutput]) -> list[FeedbackOutput]:
@@ -142,12 +147,21 @@ def _apply_llm_feedback(state: AnalysisState, fallback_outputs: list[FeedbackOut
 
     try:
         client = RuntimeLLMClient(llm_cfg)
+        prompt_variables = _build_feedback_prompt_variables(state)
+        system_prompt = render_prompt_template("feedback_system", variables=prompt_variables)
+        user_prompt = render_prompt_template("feedback_user", variables=prompt_variables)
+        if prompt_debug_enabled():
+            state.meta.setdefault("llm_prompts", {})["feedback"] = {
+                "system_template_path": str(resolve_prompt_template_path("feedback_system")),
+                "user_template_path": str(resolve_prompt_template_path("feedback_user")),
+                "system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+            }
         payload = client.chat_json(
-            system_prompt=(
-                "You are a concise public speaking coach. You must only return valid JSON "
-                "and stay grounded in the given analysis evidence."
-            ),
-            user_prompt=_build_feedback_user_prompt(state),
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            repair_schema_name="FeedbackSegmentsResult",
+            repair_schema_json=load_prompt_template("feedback_repair_schema"),
         )
     except LLMClientError as exc:
         state.add_warning(f"Feedback LLM unavailable: {exc}")

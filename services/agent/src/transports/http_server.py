@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
+import queue
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from services.agent.src.app.usecases import (
+    AnalysisEvent,
+    AnalysisEventBroker,
     AnalysisJob,
     FileAnalysisJobStore,
+    ReplayLoadRequest,
+    build_analysis_event,
     create_analysis_job,
+    load_analysis_state_from_path,
     read_analysis_result,
     run_analysis_job,
 )
@@ -23,6 +31,7 @@ def _serialize_job(job: AnalysisJob) -> dict:
     payload = job.model_dump(mode="json")
     payload["status_url"] = f"/api/v1/analyses/{job.analysis_id}"
     payload["result_url"] = f"/api/v1/analyses/{job.analysis_id}/result"
+    payload["events_url"] = f"/api/v1/analyses/{job.analysis_id}/events"
     return payload
 
 
@@ -41,6 +50,7 @@ def create_app(
     jobs_root.mkdir(parents=True, exist_ok=True)
 
     job_store = FileAnalysisJobStore(jobs_root)
+    event_broker = AnalysisEventBroker()
 
     app = FastAPI(
         title="SpeakSure++ Agent HTTP API",
@@ -93,9 +103,19 @@ def create_app(
             upload_wandb=upload_wandb,
         )
         logger.info(f"Accepted HTTP analysis job {job.analysis_id} for scenario={scenario}")
+        event_broker.publish(
+            build_analysis_event(
+                analysis_id=job.analysis_id,
+                event_type="job_created",
+                status=job.status,
+                total_steps=job.total_steps,
+                payload={"job": job.model_dump(mode="json")},
+            )
+        )
         background_tasks.add_task(
             run_analysis_job,
             job_store=job_store,
+            event_broker=event_broker,
             analysis_id=job.analysis_id,
             outputs_root=outputs_root,
             config_path=config_path,
@@ -128,6 +148,64 @@ def create_app(
                 "status": job.status,
                 "result": result,
             }
+        )
+
+    @app.post("/api/v1/replays/load")
+    def load_replay(request: ReplayLoadRequest) -> dict:
+        try:
+            state = load_analysis_state_from_path(request.path)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        return {
+            "mode": "replay",
+            "path": str(Path(request.path).expanduser().resolve()),
+            "result": state.model_dump(mode="json"),
+        }
+
+    def _encode_sse(event: AnalysisEvent) -> str:
+        return (
+            f"id: {event.created_at}\n"
+            f"event: {event.event_type}\n"
+            f"data: {json.dumps(event.model_dump(mode='json'), ensure_ascii=False)}\n\n"
+        )
+
+    @app.get("/api/v1/analyses/{analysis_id}/events")
+    async def stream_analysis_events(analysis_id: str, request: Request):
+        job = job_store.get(analysis_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=f"Analysis job not found: {analysis_id}")
+
+        history, subscriber = event_broker.subscribe(analysis_id)
+
+        async def event_stream():
+            try:
+                for event in history:
+                    yield _encode_sse(event)
+
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    try:
+                        event = await asyncio.to_thread(subscriber.get, True, 2)
+                    except queue.Empty:
+                        yield ": keep-alive\n\n"
+                        continue
+
+                    yield _encode_sse(event)
+                    if event.event_type in {"analysis_completed", "analysis_failed"}:
+                        break
+            finally:
+                event_broker.unsubscribe(analysis_id, subscriber)
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
         )
 
     return app

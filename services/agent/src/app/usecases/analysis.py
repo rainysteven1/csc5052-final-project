@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from services.agent.src.orchestration.contracts import WorkflowProgressCallback
 from services.agent.src.services.artifact_loader import ArtifactBundle, load_artifacts
 from services.agent.src.services.audio_preprocess import SUPPORTED_AUDIO_EXTENSIONS
 from services.agent.src.services.result_serializer import write_result
@@ -50,12 +51,14 @@ def execute_analysis(
     config_path: Path | None,
     transcript_override: str | None = None,
     artifacts: ArtifactBundle | None = None,
+    progress_callback: WorkflowProgressCallback | None = None,
 ) -> AnalysisExecutionResult:
     resolved_artifacts = artifacts or load_runtime_artifacts(config_path)
     workflow = build_inference_workflow(
         artifacts=resolved_artifacts,
         config_path=str(config_path) if config_path is not None else None,
         transcript_override=transcript_override,
+        progress_callback=progress_callback,
     )
     state = build_initial_state(audio_path=audio, scenario=scenario)
 

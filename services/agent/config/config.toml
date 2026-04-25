@@ -3,9 +3,8 @@ seed = 42
 [speaksure.runtime]
 config_version = "speaksure-runtime-v1"
 context_provider = "config"
-asr_provider = "stub"
-asr_backend = "stub"
-# asr_backend = "onnx"
+asr_provider = "local"
+asr_backend = "onnx"
 # asr_backend = "grpc"
 asr_backend_grpc_target = "127.0.0.1:50052"
 asr_onnx_model_dir = "services/asr/models/onnx-community__whisper-large-v3-turbo"
@@ -15,6 +14,7 @@ asr_grpc_bind = "127.0.0.1:50052"
 agent_http_bind = "127.0.0.1:8000"
 # Monolith in-process mode:
 # asr_provider = "local"
+# asr_backend = "onnx"
 # Preferred microservice mode:
 # asr_provider = "grpc"
 #
@@ -28,14 +28,24 @@ agent_http_bind = "127.0.0.1:8000"
 # MiniMax reasoning/feedback uses env vars:
 # MINIMAX_API_KEY=...
 # MINIMAX_BASE_URL=...
-# SPEAKSURE_LLM_MODEL=MiniMax-M2.7-highspeed
+# SPEAKSURE_LLM_MODEL=MiniMax-M2.7
 lexical_provider = "rule"
 prosody_provider = "rule"
 disfluency_provider = "rule"
 
 [speaksure.wandb]
 project = "speaksure-runtime"
-mode = "disabled"
+mode = "online"
+
+[speaksure.prompts]
+reasoning_system = "prompts/reasoning_system.md"
+reasoning_user = "prompts/reasoning_user.md"
+feedback_system = "prompts/feedback_system.md"
+feedback_user = "prompts/feedback_user.md"
+json_repair_system = "prompts/json_repair_system.md"
+json_repair_user = "prompts/json_repair_user.md"
+reasoning_repair_schema = "prompts/schemas/reasoning_result.json"
+feedback_repair_schema = "prompts/schemas/feedback_segments_result.json"
 
 [speaksure.contexts.interview.weights]
 lexical = 0.35

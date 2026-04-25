@@ -1,0 +1,13 @@
+{
+  "segments": [
+    {
+      "segment_id": "seg-001",
+      "severity": "medium",
+      "focus_tags": ["lexical"],
+      "reason": "问题解释",
+      "rewrite": "更直接的表达",
+      "practice": "一句总练习建议",
+      "practice_steps": ["步骤1", "步骤2"]
+    }
+  ]
+}

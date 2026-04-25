@@ -6,10 +6,12 @@ from collections.abc import Callable
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
+from pydantic import BaseModel
 
 from services.agent.src.orchestration.contracts import (
     BranchPayload,
     NodeFn,
+    WorkflowProgressCallback,
     WorkflowExecutionError,
     WorkflowGraphState,
 )
@@ -27,22 +29,119 @@ from services.agent.src.state import AnalysisState
 from services.asr.src.service import transcribe_audio
 
 
-def _raise_workflow_error(step: str, state: AnalysisState, exc: Exception) -> WorkflowExecutionError:
+def _jsonify(value: Any) -> Any:
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json")
+    if isinstance(value, dict):
+        return {str(key): _jsonify(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_jsonify(item) for item in value]
+    if isinstance(value, tuple):
+        return [_jsonify(item) for item in value]
+    return value
+
+
+def _emit_progress(
+    progress_callback: WorkflowProgressCallback | None,
+    *,
+    event_type: str,
+    step: str,
+    step_index: int,
+    total_steps: int,
+    status: str,
+    payload: dict[str, Any] | None = None,
+) -> None:
+    if progress_callback is None:
+        return
+    if event_type == "node_started" and total_steps:
+        progress = max((step_index - 1) / total_steps, 0.0)
+    elif total_steps:
+        progress = step_index / total_steps
+    else:
+        progress = 0.0
+    progress_callback(
+        {
+            "event_type": event_type,
+            "node": step,
+            "step_index": step_index,
+            "total_steps": total_steps,
+            "status": status,
+            "progress": progress,
+            "payload": payload or {},
+        }
+    )
+
+
+def _build_state_snapshot(state: AnalysisState) -> dict[str, Any]:
+    return state.model_dump(mode="json")
+
+
+def _raise_workflow_error(
+    step: str,
+    state: AnalysisState,
+    exc: Exception,
+    *,
+    progress_callback: WorkflowProgressCallback | None = None,
+    step_index: int = 0,
+    total_steps: int = 0,
+) -> WorkflowExecutionError:
     state.status = "failed"
     state.add_error(f"{step}: {exc}")
     state.result.status = "failed"
+    _emit_progress(
+        progress_callback,
+        event_type="node_failed",
+        step=step,
+        step_index=step_index,
+        total_steps=total_steps,
+        status=state.status,
+        payload={"error": str(exc), "state": _build_state_snapshot(state)},
+    )
     return WorkflowExecutionError(step, state, exc)
 
 
-def _wrap_state_node(step: str, node: NodeFn) -> Callable[[WorkflowGraphState], dict[str, AnalysisState]]:
+def _wrap_state_node(
+    step: str,
+    node: NodeFn,
+    *,
+    step_index: int,
+    total_steps: int,
+    progress_callback: WorkflowProgressCallback | None = None,
+) -> Callable[[WorkflowGraphState], dict[str, AnalysisState]]:
     def runner(graph_state: WorkflowGraphState) -> dict[str, AnalysisState]:
         state = graph_state["base_state"]
+        _emit_progress(
+            progress_callback,
+            event_type="node_started",
+            step=step,
+            step_index=step_index,
+            total_steps=total_steps,
+            status=state.status,
+            payload={"state": _build_state_snapshot(state)},
+        )
         try:
-            return {"base_state": node(state)}
+            updated_state = node(state)
+            _emit_progress(
+                progress_callback,
+                event_type="node_completed",
+                step=step,
+                step_index=step_index,
+                total_steps=total_steps,
+                status=updated_state.status,
+                payload={"state": _build_state_snapshot(updated_state)},
+            )
+            return {"base_state": updated_state}
         except WorkflowExecutionError:
             raise
         except Exception as exc:  # pragma: no cover - exercised via CLI failure handling
-            raise _raise_workflow_error(step, state, exc) from exc
+            raise _raise_workflow_error(
+                step,
+                state,
+                exc,
+                progress_callback=progress_callback,
+                step_index=step_index,
+                total_steps=total_steps,
+            ) from exc
 
     return runner
 
@@ -51,15 +150,45 @@ def _wrap_branch_node(
     step: str,
     result_key: str,
     node: Callable[[AnalysisState], BranchPayload],
+    *,
+    step_index: int,
+    total_steps: int,
+    progress_callback: WorkflowProgressCallback | None = None,
 ) -> Callable[[WorkflowGraphState], dict[str, BranchPayload]]:
     def runner(graph_state: WorkflowGraphState) -> dict[str, BranchPayload]:
         state = graph_state["base_state"]
+        _emit_progress(
+            progress_callback,
+            event_type="node_started",
+            step=step,
+            step_index=step_index,
+            total_steps=total_steps,
+            status=state.status,
+            payload={"state": _build_state_snapshot(state)},
+        )
         try:
-            return {result_key: node(state)}
+            payload = node(state)
+            _emit_progress(
+                progress_callback,
+                event_type="node_completed",
+                step=step,
+                step_index=step_index,
+                total_steps=total_steps,
+                status=state.status,
+                payload={"branch_result": _jsonify(payload)},
+            )
+            return {result_key: payload}
         except WorkflowExecutionError:
             raise
         except Exception as exc:  # pragma: no cover - exercised via CLI failure handling
-            raise _raise_workflow_error(step, state, exc) from exc
+            raise _raise_workflow_error(
+                step,
+                state,
+                exc,
+                progress_callback=progress_callback,
+                step_index=step_index,
+                total_steps=total_steps,
+            ) from exc
 
     return runner
 
@@ -154,6 +283,52 @@ def merge_analysis_node(graph_state: WorkflowGraphState) -> dict[str, AnalysisSt
     return {"base_state": state}
 
 
+def _wrap_merge_node(
+    *,
+    step: str,
+    step_index: int,
+    total_steps: int,
+    progress_callback: WorkflowProgressCallback | None = None,
+) -> Callable[[WorkflowGraphState], dict[str, AnalysisState]]:
+    def runner(graph_state: WorkflowGraphState) -> dict[str, AnalysisState]:
+        state = graph_state["base_state"]
+        _emit_progress(
+            progress_callback,
+            event_type="node_started",
+            step=step,
+            step_index=step_index,
+            total_steps=total_steps,
+            status=state.status,
+            payload={"state": _build_state_snapshot(state)},
+        )
+        try:
+            merged = merge_analysis_node(graph_state)
+            merged_state = merged["base_state"]
+            _emit_progress(
+                progress_callback,
+                event_type="node_completed",
+                step=step,
+                step_index=step_index,
+                total_steps=total_steps,
+                status=merged_state.status,
+                payload={"state": _build_state_snapshot(merged_state)},
+            )
+            return merged
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:  # pragma: no cover - exercised via CLI failure handling
+            raise _raise_workflow_error(
+                step,
+                state,
+                exc,
+                progress_callback=progress_callback,
+                step_index=step_index,
+                total_steps=total_steps,
+            ) from exc
+
+    return runner
+
+
 def reasoning_node(state: AnalysisState) -> AnalysisState:
     return apply_reasoning(state)
 
@@ -174,6 +349,7 @@ def build_inference_graph(
     *,
     config_path: str | None = None,
     transcript_override: str | None = None,
+    progress_callback: WorkflowProgressCallback | None = None,
 ) -> tuple[list[str], Any]:
     def asr_step(state: AnalysisState) -> AnalysisState:
         return transcribe_audio(state, artifacts, transcript_override=transcript_override)
@@ -194,22 +370,123 @@ def build_inference_graph(
         "feedback",
         "serialize_result",
     ]
+    total_steps = len(node_names)
+    step_index = {name: index + 1 for index, name in enumerate(node_names)}
 
     graph_builder = StateGraph(WorkflowGraphState)
-    graph_builder.add_node("prepare_input", _wrap_state_node("prepare_input", prepare_input_node))
-    graph_builder.add_node("asr", _wrap_state_node("asr", asr_step))
-    graph_builder.add_node("segment", _wrap_state_node("segment", segment_transcript))
-    graph_builder.add_node("lexical", _wrap_branch_node("lexical", "lexical_result", lexical_branch_node))
-    graph_builder.add_node("prosody", _wrap_branch_node("prosody", "prosody_result", prosody_branch_node))
+    graph_builder.add_node(
+        "prepare_input",
+        _wrap_state_node(
+            "prepare_input",
+            prepare_input_node,
+            step_index=step_index["prepare_input"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "asr",
+        _wrap_state_node(
+            "asr",
+            asr_step,
+            step_index=step_index["asr"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "segment",
+        _wrap_state_node(
+            "segment",
+            segment_transcript,
+            step_index=step_index["segment"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "lexical",
+        _wrap_branch_node(
+            "lexical",
+            "lexical_result",
+            lexical_branch_node,
+            step_index=step_index["lexical"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "prosody",
+        _wrap_branch_node(
+            "prosody",
+            "prosody_result",
+            prosody_branch_node,
+            step_index=step_index["prosody"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
     graph_builder.add_node(
         "disfluency",
-        _wrap_branch_node("disfluency", "disfluency_result", disfluency_branch_node),
+        _wrap_branch_node(
+            "disfluency",
+            "disfluency_result",
+            disfluency_branch_node,
+            step_index=step_index["disfluency"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
     )
-    graph_builder.add_node("context", _wrap_branch_node("context", "context_result", context_step))
-    graph_builder.add_node("merge_analysis", merge_analysis_node)
-    graph_builder.add_node("reasoning", _wrap_state_node("reasoning", reasoning_node))
-    graph_builder.add_node("feedback", _wrap_state_node("feedback", feedback_node))
-    graph_builder.add_node("serialize_result", _wrap_state_node("serialize_result", serialize_result_node))
+    graph_builder.add_node(
+        "context",
+        _wrap_branch_node(
+            "context",
+            "context_result",
+            context_step,
+            step_index=step_index["context"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "merge_analysis",
+        _wrap_merge_node(
+            step="merge_analysis",
+            step_index=step_index["merge_analysis"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "reasoning",
+        _wrap_state_node(
+            "reasoning",
+            reasoning_node,
+            step_index=step_index["reasoning"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "feedback",
+        _wrap_state_node(
+            "feedback",
+            feedback_node,
+            step_index=step_index["feedback"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
+    graph_builder.add_node(
+        "serialize_result",
+        _wrap_state_node(
+            "serialize_result",
+            serialize_result_node,
+            step_index=step_index["serialize_result"],
+            total_steps=total_steps,
+            progress_callback=progress_callback,
+        ),
+    )
 
     graph_builder.add_edge(START, "prepare_input")
     graph_builder.add_edge("prepare_input", "asr")
