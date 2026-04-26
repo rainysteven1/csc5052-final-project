@@ -81,6 +81,7 @@ jobs:
           cp README.md release-artifacts/submission-bundle/README.md
           cp services/agent/README.md release-artifacts/submission-bundle/AGENT_SERVICE_README.md
           cp services/agent/frontend/README.md release-artifacts/submission-bundle/FRONTEND_README.md
+          cp docs/DEMO_AND_SUBMISSION_GUIDE.md release-artifacts/submission-bundle/DEMO_AND_SUBMISSION_GUIDE.md
           cp pyproject.toml release-artifacts/submission-bundle/pyproject.toml
           cp services/agent/frontend/package.json release-artifacts/submission-bundle/frontend-package.json
           cp -r services/agent/frontend/dist/. release-artifacts/submission-bundle/frontend-dist/
@@ -94,8 +95,13 @@ jobs:
           - SpeakSure-${TAG_NAME}-submission-bundle.zip
 
           Suggested local run:
-          1. python services/agent/http_main.py
-          2. Serve services/agent/frontend/dist with any static file server
+          1. just run-backend
+          2. just run-frontend
+
+          Example routed frontend URLs:
+          - /run?view=setup&mode=live&scenario=presentation
+          - /pipeline?view=timeline&node=feedback&frame=3
+          - /results?view=feedback&feedback=seg_001
           EOF
 
           cat > "release-artifacts/submission-bundle/DEPLOYMENT.md" <<EOF
@@ -108,6 +114,7 @@ jobs:
           - Repository root README
           - Agent service README
           - Frontend README
+          - Demo and submission guide
           - \`pyproject.toml\`
           - Frontend \`package.json\`
           - Built frontend static assets under \`frontend-dist/\`
@@ -115,12 +122,25 @@ jobs:
           ## Local backend run
 
           \`\`\`bash
-          python services/agent/http_main.py
+          just run-backend
           \`\`\`
 
-          ## Frontend static preview
+          ## Local frontend run
 
-          Serve the contents of \`frontend-dist/\` with any static file server.
+          \`\`\`bash
+          just run-frontend
+          \`\`\`
+
+          ## Example routed URLs
+
+          - \`/run?view=setup&mode=live&scenario=presentation\`
+          - \`/pipeline?view=timeline&node=feedback&frame=3\`
+          - \`/results?view=feedback&feedback=seg_001\`
+          - \`/debug?view=overview&panel=result-json\`
+
+          ## Static frontend preview
+
+          If you only need the built frontend assets, serve the contents of \`frontend-dist/\` with any static file server.
 
           ## Tag / version rule
 

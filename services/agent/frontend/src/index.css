@@ -5,6 +5,16 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+
+  #root {
+    height: 100%;
+  }
+
   * {
     @apply border-border;
   }
@@ -21,5 +31,21 @@
   code,
   pre {
     font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+  }
+}
+
+@layer utilities {
+  .content-scroll {
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .scroll-stable {
+    scrollbar-gutter: stable;
+  }
+
+  .panel-block {
+    @apply rounded-[24px] border bg-background/70 p-4;
   }
 }

@@ -42,9 +42,15 @@ run-agent-http asr_mode="local":
 run-backend-monolith:
     SPEAKSURE_ASR_PROVIDER=local python services/agent/http_main.py
 
+run-backend:
+    SPEAKSURE_ASR_PROVIDER=local python services/agent/http_main.py
+
 run-backend-grpc:
     @echo "Start ASR first with: just run-asr-grpc"
     SPEAKSURE_ASR_PROVIDER=grpc UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/http_main.py
+
+run-frontend:
+    cd services/agent/frontend && npm run dev
 
 analyze *args:
     UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/cli.py analyze {{ args }}
