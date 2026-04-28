@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-import tomllib
 from pathlib import Path
 from typing import Any
 
+import tomllib
 from pydantic import BaseModel, Field
 
 from services.agent.src.config import default_config_path, load_config, repo_root

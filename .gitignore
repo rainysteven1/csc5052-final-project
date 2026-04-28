@@ -28,7 +28,10 @@ data/
 !experiments/
 experiments/*
 !experiments/metadata/
-models/
+/models/
+services/agent/models/
+!services/backend/go/internal/models/
+!services/backend/go/internal/models/**
 logs/
 wandb/
 

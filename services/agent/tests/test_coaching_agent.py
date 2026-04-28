@@ -4,7 +4,13 @@ from pathlib import Path
 
 import services.agent.src.backend.nodes.coaching_node as coaching_node_module
 from services.agent.src.backend.tools.evidence_summary import build_evidence_summary
-from services.agent.src.schemas.analysis import ContextOutput, DisfluencyIssue, DisfluencyOutput, LexicalOutput, SpeechSegment
+from services.agent.src.schemas.analysis import (
+    ContextOutput,
+    DisfluencyIssue,
+    DisfluencyOutput,
+    LexicalOutput,
+    SpeechSegment,
+)
 from services.agent.src.state import AnalysisState
 
 

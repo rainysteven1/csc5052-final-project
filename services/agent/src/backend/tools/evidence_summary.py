@@ -12,7 +12,6 @@ from services.agent.src.schemas.analysis import (
 )
 from services.agent.src.state import AnalysisState
 
-
 DIMENSION_ORDER = ("lexical", "prosody", "disfluency")
 
 

@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import ProsodyOutput
-from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.backend.contracts.analysis_contracts import SegmentFeatureMap
 from services.agent.src.backend.tools import (
     LLMClientError,
@@ -19,6 +17,8 @@ from services.agent.src.backend.tools import (
 )
 from services.agent.src.backend.tools.feature_extractor import extract_segment_features
 from services.agent.src.backend.tools.rule_loader import load_prosody_rules
+from services.agent.src.schemas.analysis import ProsodyOutput
+from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
 
 

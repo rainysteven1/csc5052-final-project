@@ -3,14 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from services.agent.src.backend.tools.rule_loader import (
-    load_feedback_fallback_rules,
     load_context_defaults,
     load_disfluency_rules,
+    load_feedback_fallback_rules,
     load_lexical_rules,
     load_prosody_rules,
     load_scoring_rules,
     resolve_rule_config_path,
 )
+
+
 def test_rule_loader_uses_service_defaults_when_custom_config_has_no_rules(tmp_path: Path) -> None:
     defaults_path = resolve_rule_config_path("context_defaults")
 

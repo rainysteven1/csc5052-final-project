@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from services.agent.src.asr.config import resolve_asr_backend_config
 from services.agent.src.config import (
     data_root,
     default_config_path,
@@ -17,7 +18,6 @@ from services.agent.src.services.artifact_loader import (
     resolve_agent_grpc_bind,
     resolve_asr_grpc_bind,
 )
-from services.agent.src.asr.config import resolve_asr_backend_config
 
 
 def test_load_config_reads_runtime_settings() -> None:

@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from services.agent.src.logger import logger
-from services.agent.src.schemas.analysis import FeedbackOutput, SegmentFeedback
 from services.agent.src.backend.contracts.analysis_contracts import FeedbackSegmentPayload
 from services.agent.src.backend.tools import (
     LLMClientError,
@@ -16,9 +14,11 @@ from services.agent.src.backend.tools import (
     load_prompt_template,
     prompt_debug_enabled,
     render_prompt_template,
-    resolve_runtime_llm_config,
     resolve_prompt_template_path,
+    resolve_runtime_llm_config,
 )
+from services.agent.src.logger import logger
+from services.agent.src.schemas.analysis import FeedbackOutput, SegmentFeedback
 from services.agent.src.state import AnalysisState
 
 SEVERITY_ORDER = ["stable", "low", "medium", "high"]
@@ -37,7 +37,10 @@ def _infer_dimension(label: str) -> str | None:
         return "lexical"
     if any(token in lowered for token in ("prosody", "pace", "pause", "intonation", "节奏", "停顿", "语速", "语调")):
         return "prosody"
-    if any(token in lowered for token in ("disfluency", "filler", "repeat", "repair", "流畅", "填充", "重复", "自我修正")):
+    if any(
+        token in lowered
+        for token in ("disfluency", "filler", "repeat", "repair", "流畅", "填充", "重复", "自我修正")
+    ):
         return "disfluency"
     return None
 

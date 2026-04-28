@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from services.agent.src.logger import logger
-from services.agent.src.schemas.analysis import JudgmentOutput
 from services.agent.src.backend.contracts.analysis_contracts import (
     JudgmentPayload,
     ScorePayload,
@@ -17,10 +15,12 @@ from services.agent.src.backend.tools import (
     load_prompt_template,
     prompt_debug_enabled,
     render_prompt_template,
-    resolve_runtime_llm_config,
     resolve_prompt_template_path,
+    resolve_runtime_llm_config,
     score_state,
 )
+from services.agent.src.logger import logger
+from services.agent.src.schemas.analysis import JudgmentOutput
 from services.agent.src.state import AnalysisState
 
 FOCUS_LABELS = {

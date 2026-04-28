@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-from services.agent.src.schemas.analysis import ContextOutput, DisfluencyIssue, DisfluencyOutput, LexicalOutput, ProsodyOutput, SpeechSegment
 from services.agent.src.backend.tools.evidence_summary import build_evidence_summary
+from services.agent.src.schemas.analysis import (
+    ContextOutput,
+    DisfluencyIssue,
+    DisfluencyOutput,
+    LexicalOutput,
+    ProsodyOutput,
+    SpeechSegment,
+)
 from services.agent.src.state import AnalysisState
 
 

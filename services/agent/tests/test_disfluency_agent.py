@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import services.agent.src.backend.nodes.disfluency_node as disfluency_node_module
-from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.backend.nodes.disfluency_node import analyze_disfluency
+from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.state import AnalysisState
 
 

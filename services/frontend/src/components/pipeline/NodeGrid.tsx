@@ -150,12 +150,14 @@ function resolveFakeLiveNodeVisual(
   finalState: ReturnType<typeof normalizeAnalysisState>,
   placeholderVisuals: NodeVisual[]
 ) {
-  const completedEvent = [...events].reverse().find(
-    (event) =>
-      normalizeNodeName(event.node) === node &&
-      (event.event_type === 'node_completed' ||
-        event.event_type === 'analysis_completed')
-  );
+  const completedEvent = [...events]
+    .reverse()
+    .find(
+      (event) =>
+        normalizeNodeName(event.node) === node &&
+        (event.event_type === 'node_completed' ||
+          event.event_type === 'analysis_completed')
+    );
 
   if (!completedEvent) {
     return placeholderVisuals.find((item) => item.node === node);

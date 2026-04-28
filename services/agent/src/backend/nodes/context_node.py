@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from services.agent.src.backend.tools.rule_loader import load_context_defaults
 from services.agent.src.schemas.analysis import ContextOutput
 from services.agent.src.services.artifact_loader import read_speaksure_section
-from services.agent.src.backend.tools.rule_loader import load_context_defaults
 from services.agent.src.state import AnalysisState
 
 

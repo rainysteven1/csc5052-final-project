@@ -11,9 +11,9 @@ from typing import Any
 
 from openai import OpenAI
 
+from services.agent.src.backend.tools.prompt_loader import render_prompt_template
 from services.agent.src.config import get_config
 from services.agent.src.logger import logger
-from services.agent.src.backend.tools.prompt_loader import render_prompt_template
 
 DEFAULT_MINIMAX_BASE_URL = "https://api.minimaxi.chat/v1"
 DEFAULT_MINIMAX_MODEL = "MiniMax-M2.7"

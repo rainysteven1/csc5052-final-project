@@ -5,9 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from services.agent.src.logger import logger
-from services.agent.src.schemas.analysis import CoachingOutput, FeedbackOutput, SegmentFeedback
-from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.backend.contracts.analysis_contracts import CoachingPayload, FeedbackSegmentPayload
 from services.agent.src.backend.nodes.feedback_node import synthesize_feedback
 from services.agent.src.backend.nodes.judgment_node import synthesize_judgment
@@ -20,6 +17,9 @@ from services.agent.src.backend.tools import (
     resolve_prompt_template_path,
     resolve_runtime_llm_config,
 )
+from services.agent.src.logger import logger
+from services.agent.src.schemas.analysis import CoachingOutput, FeedbackOutput, SegmentFeedback
+from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
 
 
@@ -92,7 +92,11 @@ def _merge_feedback_outputs(
         )
         by_segment[segment_id] = merged
 
-    state.agent_outputs.feedback = [by_segment[segment.segment_id] for segment in state.segments if segment.segment_id in by_segment]
+    state.agent_outputs.feedback = [
+        by_segment[segment.segment_id]
+        for segment in state.segments
+        if segment.segment_id in by_segment
+    ]
     for segment in state.segments:
         feedback = by_segment.get(segment.segment_id)
         if feedback is None:

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import LexicalOutput, SegmentHighlight
-from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.backend.tools import (
     LLMClientError,
     RuntimeLLMClient,
@@ -17,8 +15,10 @@ from services.agent.src.backend.tools import (
     resolve_prompt_template_path,
     resolve_runtime_llm_config,
 )
-from services.agent.src.backend.tools.text_rewrite import build_lexical_rewrite
 from services.agent.src.backend.tools.rule_loader import load_lexical_rules
+from services.agent.src.backend.tools.text_rewrite import build_lexical_rewrite
+from services.agent.src.schemas.analysis import LexicalOutput, SegmentHighlight
+from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
 
 

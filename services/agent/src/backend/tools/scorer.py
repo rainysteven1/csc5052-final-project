@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import SegmentScore
 from services.agent.src.backend.contracts.analysis_contracts import ScorePayload
 from services.agent.src.backend.tools.rule_loader import ScoringRulesConfig, load_scoring_rules
+from services.agent.src.schemas.analysis import SegmentScore
 from services.agent.src.state import AnalysisState
 
 

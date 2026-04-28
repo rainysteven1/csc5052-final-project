@@ -6,8 +6,6 @@ import json
 import re
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import DisfluencyIssue, DisfluencyOutput, SegmentHighlight
-from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.backend.tools import (
     LLMClientError,
     RuntimeLLMClient,
@@ -18,6 +16,8 @@ from services.agent.src.backend.tools import (
     resolve_runtime_llm_config,
 )
 from services.agent.src.backend.tools.rule_loader import DisfluencyRulesConfig, load_disfluency_rules
+from services.agent.src.schemas.analysis import DisfluencyIssue, DisfluencyOutput, SegmentHighlight
+from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
 
 

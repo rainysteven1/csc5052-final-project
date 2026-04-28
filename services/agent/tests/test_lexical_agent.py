@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import services.agent.src.backend.nodes.lexical_node as lexical_node_module
-from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.backend.nodes.lexical_node import analyze_lexical_uncertainty, build_lexical_rewrite
+from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.state import AnalysisState
 
 

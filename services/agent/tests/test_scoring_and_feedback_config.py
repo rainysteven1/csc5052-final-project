@@ -2,9 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import ContextOutput, DisfluencyIssue, DisfluencyOutput, FeedbackOutput, LexicalOutput, ProsodyOutput, SpeechSegment
 from services.agent.src.backend.nodes.feedback_node import apply_feedback
 from services.agent.src.backend.tools.scorer import score_state
+from services.agent.src.schemas.analysis import (
+    ContextOutput,
+    DisfluencyIssue,
+    DisfluencyOutput,
+    FeedbackOutput,
+    LexicalOutput,
+    ProsodyOutput,
+    SpeechSegment,
+)
 from services.agent.src.state import AnalysisState
 
 
@@ -108,7 +116,10 @@ feedback_fallback_rules = "rules/feedback.toml"
         encoding="utf-8",
     )
 
-    monkeypatch.setattr("services.agent.src.backend.nodes.feedback_node.resolve_runtime_llm_config", lambda: type("Cfg", (), {"enabled": False})())
+    monkeypatch.setattr(
+        "services.agent.src.backend.nodes.feedback_node.resolve_runtime_llm_config",
+        lambda: type("Cfg", (), {"enabled": False})(),
+    )
 
     state = AnalysisState(
         scenario="presentation",

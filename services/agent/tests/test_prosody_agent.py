@@ -5,9 +5,9 @@ import wave
 from pathlib import Path
 
 import services.agent.src.backend.nodes.prosody_node as prosody_node_module
-from services.agent.src.schemas.analysis import AudioMetadata, SpeechSegment
 from services.agent.src.backend.nodes.prosody_node import analyze_prosody
 from services.agent.src.backend.tools.feature_extractor import extract_segment_features
+from services.agent.src.schemas.analysis import AudioMetadata, SpeechSegment
 from services.agent.src.state import AnalysisState
 
 

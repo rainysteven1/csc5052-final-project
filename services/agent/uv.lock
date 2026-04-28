@@ -1783,6 +1783,22 @@ version = "0.1.0"
 source = { editable = "." }
 
 [package.dev-dependencies]
+ci = [
+    { name = "grpcio" },
+    { name = "grpcio-health-checking" },
+    { name = "grpcio-reflection" },
+    { name = "langgraph" },
+    { name = "loguru" },
+    { name = "openai" },
+    { name = "protobuf" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "python-dotenv" },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "typer" },
+    { name = "uv" },
+]
 dev = [
     { name = "pytest" },
     { name = "ruff" },
@@ -1815,6 +1831,22 @@ runtime = [
 [package.metadata]
 
 [package.metadata.requires-dev]
+ci = [
+    { name = "grpcio", specifier = ">=1.80.0" },
+    { name = "grpcio-health-checking", specifier = ">=1.80.0" },
+    { name = "grpcio-reflection", specifier = ">=1.80.0" },
+    { name = "langgraph", specifier = ">=1.1.3" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "openai", specifier = ">=2.29.0" },
+    { name = "protobuf", specifier = ">=6.33.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "rich", specifier = ">=13.9.0" },
+    { name = "ruff", specifier = ">=0.15.5" },
+    { name = "typer", specifier = ">=0.24.1" },
+    { name = "uv", specifier = ">=0.10.12" },
+]
 dev = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.5" },

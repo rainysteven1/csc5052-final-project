@@ -7,8 +7,8 @@ import statistics
 import wave
 from pathlib import Path
 
-from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.backend.contracts.analysis_contracts import SegmentFeatureMap
+from services.agent.src.schemas.analysis import SpeechSegment
 
 
 def _chunk_values(values: list[float], chunk_size: int) -> list[list[float]]:

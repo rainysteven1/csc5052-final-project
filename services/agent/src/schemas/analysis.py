@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 
 
 def utc_now_iso() -> str:
