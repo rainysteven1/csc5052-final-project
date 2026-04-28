@@ -61,15 +61,32 @@ Default fake live timing:
 
 ## Deploy with Vercel frontend
 
+Recommended public-demo split:
+
+- `services/frontend` on Vercel
+- `services/fake-backend` on Render
+
 Deploy the frontend separately and point it to the fake backend:
 
 ```bash
-VITE_API_BASE_URL=https://your-fake-backend.example.com
+VITE_API_BASE_URL=https://your-fake-backend.onrender.com
 ```
 
 The frontend now resolves both `fetch(...)` and `EventSource(...)` against that base URL.
 
 Use a Node host that supports long-lived HTTP connections, because the live demo view depends on SSE.
+
+On Render, use a build command that installs dev dependencies for TypeScript compilation:
+
+```bash
+corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm run build
+```
+
+If you want a GitHub-triggered Render deploy, configure:
+
+- repository secret `RENDER_DEPLOY_HOOK_URL`
+- optional repository variable `RENDER_FAKE_BACKEND_URL`
+- workflow `.github/workflows/render-fake-backend-deploy.yml`
 
 See also:
 

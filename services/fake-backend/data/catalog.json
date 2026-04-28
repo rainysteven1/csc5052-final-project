@@ -1,0 +1,233 @@
+{
+  "defaultScenario": "presentation",
+  "scenarios": [
+    {
+      "id": "presentation",
+      "label": "Presentation demo",
+      "audioFilename": "demo-presentation.flac",
+      "resultFile": "replays/presentation.json",
+      "timeline": [
+        {
+          "eventType": "job_running",
+          "status": "running",
+          "node": "input",
+          "progress": 0.08,
+          "message": "Queued demo presentation run.",
+          "substep": "prepare_audio"
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "input",
+          "progress": 0.2,
+          "message": "Prepared transcript and segments.",
+          "substep": "segment"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "input",
+          "progress": 0.3,
+          "message": "Input stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.45,
+          "message": "Extracted lexical, prosody, and disfluency signals.",
+          "substep": "merge_analysis"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.62,
+          "message": "Evidence stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.78,
+          "message": "Generated judgment and coaching guidance.",
+          "substep": "feedback"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.9,
+          "message": "Coaching stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "finalize",
+          "progress": 0.97,
+          "message": "Serializing final demo output.",
+          "substep": "serialize_result"
+        },
+        {
+          "eventType": "analysis_completed",
+          "status": "completed",
+          "node": "finalize",
+          "progress": 1,
+          "message": "Demo presentation run completed."
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business demo",
+      "audioFilename": "demo-business.flac",
+      "resultFile": "replays/business.json",
+      "timeline": [
+        {
+          "eventType": "job_running",
+          "status": "running",
+          "node": "input",
+          "progress": 0.08,
+          "message": "Queued demo business run.",
+          "substep": "prepare_audio"
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "input",
+          "progress": 0.2,
+          "message": "Prepared transcript and segments.",
+          "substep": "segment"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "input",
+          "progress": 0.3,
+          "message": "Input stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.45,
+          "message": "Extracted lexical, prosody, and disfluency signals.",
+          "substep": "merge_analysis"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.62,
+          "message": "Evidence stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.78,
+          "message": "Generated judgment and coaching guidance.",
+          "substep": "feedback"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.9,
+          "message": "Coaching stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "finalize",
+          "progress": 0.97,
+          "message": "Serializing final demo output.",
+          "substep": "serialize_result"
+        },
+        {
+          "eventType": "analysis_completed",
+          "status": "completed",
+          "node": "finalize",
+          "progress": 1,
+          "message": "Demo business run completed."
+        }
+      ]
+    },
+    {
+      "id": "interview",
+      "label": "Interview demo",
+      "audioFilename": "demo-interview.flac",
+      "resultFile": "replays/interview.json",
+      "timeline": [
+        {
+          "eventType": "job_running",
+          "status": "running",
+          "node": "input",
+          "progress": 0.08,
+          "message": "Queued demo interview run.",
+          "substep": "prepare_audio"
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "input",
+          "progress": 0.2,
+          "message": "Prepared transcript and segments.",
+          "substep": "segment"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "input",
+          "progress": 0.3,
+          "message": "Input stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.45,
+          "message": "Extracted lexical, prosody, and disfluency signals.",
+          "substep": "merge_analysis"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "evidence",
+          "progress": 0.62,
+          "message": "Evidence stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.78,
+          "message": "Generated judgment and coaching guidance.",
+          "substep": "feedback"
+        },
+        {
+          "eventType": "node_completed",
+          "status": "running",
+          "node": "coaching",
+          "progress": 0.9,
+          "message": "Coaching stage completed."
+        },
+        {
+          "eventType": "node_started",
+          "status": "running",
+          "node": "finalize",
+          "progress": 0.97,
+          "message": "Serializing final demo output.",
+          "substep": "serialize_result"
+        },
+        {
+          "eventType": "analysis_completed",
+          "status": "completed",
+          "node": "finalize",
+          "progress": 1,
+          "message": "Demo interview run completed."
+        }
+      ]
+    }
+  ]
+}

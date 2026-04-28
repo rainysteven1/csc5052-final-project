@@ -1,0 +1,242 @@
+{
+  "request_id": "req_20260425T151006",
+  "status": "completed",
+  "scenario": "business",
+  "audio": {
+    "source_path": "/demo/business.flac",
+    "normalized_path": "/demo/business.flac",
+    "format": "flac",
+    "duration_seconds": null,
+    "duration_ms": null,
+    "sample_rate": null,
+    "channels": null,
+    "file_size_bytes": 60652
+  },
+  "artifacts": {
+    "asr_model_version": "local-asr-v1",
+    "lexical_model_version": "rule-v1",
+    "prosody_model_version": "rule-v1",
+    "disfluency_model_version": "rule-v1",
+    "config_version": "speaksure-runtime-v1",
+    "fallback_mode": false,
+    "providers": {
+      "asr": "local",
+      "lexical": "rule",
+      "prosody": "rule",
+      "disfluency": "rule",
+      "context": "config"
+    },
+    "paths": {
+      "asr_backend_grpc_target": "127.0.0.1:50052",
+      "asr_onnx_model_dir": "services/asr/models/onnx-community__whisper-large-v3-turbo",
+      "asr_grpc_target": "127.0.0.1:50052",
+      "agent_grpc_bind": "127.0.0.1:50051",
+      "asr_grpc_bind": "127.0.0.1:50052",
+      "agent_http_bind": "127.0.0.1:8000",
+      "transcription_manifest_path": "/root/private_data/workspace/csc5052-final-project/services/agent/data/samples/transcriptions.csv"
+    }
+  },
+  "transcript": "The history of the house is plain now.",
+  "raw_asr_segments": [
+    {
+      "segment_id": "asr_001",
+      "start": 0.0,
+      "end": 0.0,
+      "text": "The history of the house is plain now.",
+      "pause_before": null,
+      "token_count": 8,
+      "scores": {
+        "lexical": null,
+        "prosody": null,
+        "disfluency": null,
+        "final": null
+      },
+      "highlights": [],
+      "feedback": {
+        "severity": null,
+        "focus_tags": [],
+        "reason": null,
+        "rewrite": null,
+        "practice": null,
+        "practice_steps": []
+      }
+    }
+  ],
+  "segments": [
+    {
+      "segment_id": "seg_001",
+      "start": 0.0,
+      "end": 0.0,
+      "text": "The history of the house is plain now.",
+      "pause_before": 0.0,
+      "token_count": 8,
+      "scores": {
+        "lexical": 0.0,
+        "prosody": 0.2,
+        "disfluency": 0.0,
+        "final": 0.082
+      },
+      "highlights": [],
+      "feedback": {
+        "severity": "medium",
+        "focus_tags": ["prosody"],
+        "reason": "语速偏快（8000000.0），且完全没有停顿，语调变化为零。语流过于平坦，缺乏节奏感和自然起伏，在presentation场景中显得机械、不够生动。",
+        "rewrite": "The history of the house is plain now.（可适当放慢语速，在'plain'后微顿）",
+        "practice": "练习在句中适当位置加入自然停顿，用停顿代替过快的语速。",
+        "practice_steps": [
+          "以正常语速朗读此句，记录时间",
+          "找到'plain'后的自然断点，练习在该处加入0.3秒停顿",
+          "用略低于平均语速的速度重读，强调'history'和'plain'",
+          "连续练习3遍，注意保持语速稳定不加速"
+        ]
+      }
+    }
+  ],
+  "agent_outputs": {
+    "lexical": [
+      {
+        "segment_id": "seg_001",
+        "score": 0.0,
+        "triggers": [],
+        "explanations": []
+      }
+    ],
+    "prosody": [
+      {
+        "segment_id": "seg_001",
+        "score": 0.2,
+        "features": {
+          "speech_rate": 8000000.0,
+          "pause_count": 0.0,
+          "pause_duration": 0.0,
+          "pitch_var": 0.0,
+          "energy_var": 0.0
+        },
+        "explanations": ["语速偏快，语流稳定性可能下降。"]
+      }
+    ],
+    "disfluency": [
+      {
+        "segment_id": "seg_001",
+        "score": 0.0,
+        "issues": [],
+        "explanations": []
+      }
+    ],
+    "context": {
+      "scenario": "presentation",
+      "weights": {
+        "lexical": 0.3,
+        "prosody": 0.35,
+        "disfluency": 0.2,
+        "context": 0.15
+      },
+      "style_constraints": ["保持节奏稳定", "控制长停顿"]
+    },
+    "reasoning": {
+      "overall_score": 0.082,
+      "level": "low",
+      "dominant_causes": ["prosody"],
+      "lexical_average": 0.0,
+      "prosody_average": 0.2,
+      "disfluency_average": 0.0,
+      "llm_summary": "本次演示整体得分偏低，主要问题在于韵律表现不够稳定，语速和停顿控制有待提升。",
+      "llm_dominant_causes": ["韵律不稳"],
+      "coaching_focus": ["加强语速和停顿的节奏控制", "提升语调起伏的自然度"],
+      "provider": "minimax",
+      "model": "MiniMax-M2.7"
+    },
+    "feedback": [
+      {
+        "segment_id": "seg_001",
+        "severity": "medium",
+        "focus_tags": ["prosody"],
+        "problem": "语速偏快（8000000.0），且完全没有停顿，语调变化为零。语流过于平坦，缺乏节奏感和自然起伏，在presentation场景中显得机械、不够生动。",
+        "rewrite": "The history of the house is plain now.（可适当放慢语速，在'plain'后微顿）",
+        "practice": "练习在句中适当位置加入自然停顿，用停顿代替过快的语速。",
+        "practice_steps": [
+          "以正常语速朗读此句，记录时间",
+          "找到'plain'后的自然断点，练习在该处加入0.3秒停顿",
+          "用略低于平均语速的速度重读，强调'history'和'plain'",
+          "连续练习3遍，注意保持语速稳定不加速"
+        ]
+      }
+    ]
+  },
+  "result": {
+    "status": "completed",
+    "overall_score": 0.082,
+    "level": "low",
+    "dominant_causes": ["prosody"],
+    "summary": "本次演示整体得分偏低，主要问题在于韵律表现不够稳定，语速和停顿控制有待提升。",
+    "segment_results": [
+      {
+        "segment_id": "seg_001",
+        "start": 0.0,
+        "end": 0.0,
+        "text": "The history of the house is plain now.",
+        "pause_before": 0.0,
+        "token_count": 8,
+        "scores": {
+          "lexical": 0.0,
+          "prosody": 0.2,
+          "disfluency": 0.0,
+          "final": 0.082
+        },
+        "highlights": [],
+        "feedback": {
+          "severity": "medium",
+          "focus_tags": ["prosody"],
+          "reason": "语速偏快（8000000.0），且完全没有停顿，语调变化为零。语流过于平坦，缺乏节奏感和自然起伏，在presentation场景中显得机械、不够生动。",
+          "rewrite": "The history of the house is plain now.（可适当放慢语速，在'plain'后微顿）",
+          "practice": "练习在句中适当位置加入自然停顿，用停顿代替过快的语速。",
+          "practice_steps": [
+            "以正常语速朗读此句，记录时间",
+            "找到'plain'后的自然断点，练习在该处加入0.3秒停顿",
+            "用略低于平均语速的速度重读，强调'history'和'plain'",
+            "连续练习3遍，注意保持语速稳定不加速"
+          ]
+        }
+      }
+    ],
+    "generated_at": "2026-04-25T15:10:53.622324+00:00"
+  },
+  "warnings": ["Audio normalization is currently passthrough for non-wav files."],
+  "errors": [],
+  "meta": {
+    "workflow_engine": "langgraph",
+    "workflow_nodes": [
+      "prepare_input",
+      "asr",
+      "segment",
+      "lexical",
+      "prosody",
+      "disfluency",
+      "context",
+      "merge_analysis",
+      "reasoning",
+      "feedback",
+      "serialize_result"
+    ],
+    "preprocess_mode": "passthrough",
+    "asr_mode": "manifest",
+    "manifest": {
+      "manifest_path": "/root/private_data/workspace/csc5052-final-project/services/agent/data/samples/transcriptions.csv",
+      "manifest_audio_path": "./audio/en_test_0315.wav",
+      "language": "en",
+      "split": "test",
+      "dataset_index": "315",
+      "reference_text": "THE HISTORY OF THE HOUSE IS PLAIN NOW",
+      "transcription_model": "Whisper-large-v3"
+    },
+    "language": "en",
+    "llm_reasoning": {
+      "provider": "minimax",
+      "model": "MiniMax-M2.7"
+    },
+    "llm_feedback": {
+      "provider": "minimax",
+      "model": "MiniMax-M2.7"
+    }
+  }
+}
