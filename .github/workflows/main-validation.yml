@@ -1,4 +1,4 @@
-name: Main Validation
+name: Service Validation
 
 on:
   pull_request:
@@ -6,7 +6,10 @@ on:
     paths:
       - "services/backend/.golangci.yaml"
       - ".github/workflows/main-validation.yml"
-      - "scripts/check_*.sh"
+      - "scripts/check_agent.sh"
+      - "scripts/check_backend.sh"
+      - "scripts/check_fake_backend.sh"
+      - "scripts/check_frontend.sh"
       - "services/agent/**"
       - "services/backend/go/**"
       - "services/fake-backend/**"
@@ -17,7 +20,10 @@ on:
     paths:
       - "services/backend/.golangci.yaml"
       - ".github/workflows/main-validation.yml"
-      - "scripts/check_*.sh"
+      - "scripts/check_agent.sh"
+      - "scripts/check_backend.sh"
+      - "scripts/check_fake_backend.sh"
+      - "scripts/check_frontend.sh"
       - "services/agent/**"
       - "services/backend/go/**"
       - "services/fake-backend/**"
@@ -27,8 +33,15 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.3"
+  GOLANGCI_LINT_VERSION: "v2.11"
+
 jobs:
   changes:
+    name: Detect Changed Services
     runs-on: ubuntu-latest
     outputs:
       agent: ${{ steps.filter.outputs.agent }}
@@ -67,7 +80,7 @@ jobs:
               - 'services/frontend/**'
 
   agent:
-    name: Agent
+    name: Agent CI
     needs: changes
     if: needs.changes.outputs.agent == 'true'
     runs-on: ubuntu-latest
@@ -78,7 +91,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
@@ -89,7 +102,7 @@ jobs:
         run: ./scripts/check_agent.sh
 
   backend:
-    name: Backend
+    name: Backend CI
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
@@ -106,7 +119,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
           working-directory: services/backend/go
           args: --config=../.golangci.yaml ./...
 
@@ -114,7 +127,7 @@ jobs:
         run: ./scripts/check_backend.sh
 
   fake-backend:
-    name: Fake Backend
+    name: Fake Backend CI
     needs: changes
     if: needs.changes.outputs.fake_backend == 'true'
     runs-on: ubuntu-latest
@@ -122,23 +135,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          version: 9.15.3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: services/fake-backend/pnpm-lock.yaml
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          lockfile-path: services/fake-backend/pnpm-lock.yaml
+          cache-key-suffix: fake-backend
 
       - name: Run fake backend checks
         run: ./scripts/check_fake_backend.sh
 
   frontend:
-    name: Frontend
+    name: Frontend CI
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -146,17 +155,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          version: 9.15.3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: services/frontend/pnpm-lock.yaml
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          lockfile-path: services/frontend/pnpm-lock.yaml
+          cache-key-suffix: frontend
 
       - name: Run frontend checks
         run: ./scripts/check_frontend.sh
@@ -216,10 +221,29 @@ jobs:
             fi
           }
 
+          build_changed_list() {
+            local names=()
+
+            [ "$AGENT_CHANGED" = "true" ] && names+=("agent")
+            [ "$BACKEND_CHANGED" = "true" ] && names+=("backend")
+            [ "$FAKE_BACKEND_CHANGED" = "true" ] && names+=("fake-backend")
+            [ "$FRONTEND_CHANGED" = "true" ] && names+=("frontend")
+
+            if [ "${#names[@]}" -eq 0 ]; then
+              echo "none"
+              return
+            fi
+
+            local IFS=', '
+            echo "${names[*]}"
+          }
+
+          CHANGED_SERVICES="$(build_changed_list)"
+
           {
-            echo "## Main Validation Summary"
+            echo "## Service Validation Summary"
             echo
-            echo "Parallel per-service validation for the current change set."
+            echo "Changed services: \`${CHANGED_SERVICES}\`"
             echo
             echo "| Service | Changed | Result |"
             echo "| --- | --- | --- |"
@@ -229,6 +253,14 @@ jobs:
           summarize "backend" "$BACKEND_CHANGED" "$BACKEND_RESULT"
           summarize "fake-backend" "$FAKE_BACKEND_CHANGED" "$FAKE_BACKEND_RESULT"
           summarize "frontend" "$FRONTEND_CHANGED" "$FRONTEND_RESULT"
+
+          {
+            echo
+            echo "Notes:"
+            echo "- \`Changed = no\` means the service was skipped because no matching files changed."
+            echo "- \`⚪ skipped\` under \`Result\` is expected for unchanged services."
+            echo "- Any changed service that reports \`❌ failure\` fails the workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
 
           if { [ "$AGENT_CHANGED" = "true" ] && [ "$AGENT_RESULT" = "failure" ]; } || \
              { [ "$BACKEND_CHANGED" = "true" ] && [ "$BACKEND_RESULT" = "failure" ]; } || \

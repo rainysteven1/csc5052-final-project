@@ -1,4 +1,4 @@
-name: Release From Tag
+name: Release Bundle
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.3"
 
 jobs:
   release:
@@ -18,23 +22,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          version: 9.15.3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: services/frontend/pnpm-lock.yaml
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          lockfile-path: services/frontend/pnpm-lock.yaml
+          cache-key-suffix: release-frontend
 
       - name: Build frontend bundle
         working-directory: services/frontend
         run: |
-          pnpm install --frozen-lockfile
-          pnpm build
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm build
 
       - name: Prepare release artifacts
         env:

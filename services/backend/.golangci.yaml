@@ -12,14 +12,12 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+  exclusions:
+    rules:
+      - path: ".*_test\\.go"
+        linters:
+          - errcheck
 
 formatters:
   enable:
     - gofmt
-
-issues:
-  exclude-use-default: false
-  exclude-rules:
-    - path: ".*_test\\.go"
-      linters:
-        - errcheck
