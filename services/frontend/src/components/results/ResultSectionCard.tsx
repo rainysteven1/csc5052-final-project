@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { SurfaceSection } from "@/components/shared/SurfaceSection";
+import { SurfaceSection } from '@/components/shared/SurfaceSection';
 
 type ResultSectionCardProps = {
   title: ReactNode;

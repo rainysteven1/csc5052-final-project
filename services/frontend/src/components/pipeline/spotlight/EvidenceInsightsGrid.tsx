@@ -1,6 +1,5 @@
-import { PipelineSectionBlock } from "@/components/pipeline/PipelineSectionBlock";
-
-import { SpotlightCalloutList } from "@/components/pipeline/spotlight/SpotlightPrimitives";
+import { PipelineSectionBlock } from '@/components/pipeline/PipelineSectionBlock';
+import { SpotlightCalloutList } from '@/components/pipeline/spotlight/SpotlightPrimitives';
 
 type EvidenceInsight = {
   title: string;
@@ -17,7 +16,7 @@ export function EvidenceInsightsGrid({ insights }: EvidenceInsightsGridProps) {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className='grid gap-4 xl:grid-cols-2'>
       {insights.map((insight) => (
         <PipelineSectionBlock key={insight.title} label={insight.title}>
           <SpotlightCalloutList items={insight.lines} />

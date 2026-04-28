@@ -1,4 +1,4 @@
-import { ResultInfoBlock } from "@/components/results/ResultInfoBlock";
+import { ResultInfoBlock } from '@/components/results/ResultInfoBlock';
 
 type SegmentLinkedCoachingGridProps = {
   problem: string;
@@ -12,20 +12,17 @@ export function SegmentLinkedCoachingGrid({
   practice,
 }: SegmentLinkedCoachingGridProps) {
   return (
-    <div className="mt-3 grid gap-3 xl:grid-cols-3">
+    <div className='mt-3 grid gap-3 xl:grid-cols-3'>
+      <ResultInfoBlock label='Linked coaching problem' value={problem} />
       <ResultInfoBlock
-        label="Linked coaching problem"
-        value={problem}
-      />
-      <ResultInfoBlock
-        label="Linked rewrite"
+        label='Linked rewrite'
         value={rewrite}
-        tone="tone-accent-soft"
+        tone='tone-accent-soft'
       />
       <ResultInfoBlock
-        label="Practice follow-up"
+        label='Practice follow-up'
         value={practice}
-        tone="tone-secondary-muted"
+        tone='tone-secondary-muted'
       />
     </div>
   );

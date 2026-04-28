@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { SurfaceLabelSection } from "@/components/shared/SurfaceSection";
+import { SurfaceLabelSection } from '@/components/shared/SurfaceSection';
 
 type PipelineSectionBlockProps = {
   label: string;

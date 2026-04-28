@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { SectionEyebrow } from "@/components/shared/SectionEyebrow";
-import { cn } from "@/lib/utils";
+import { SectionEyebrow } from '@/components/shared/SectionEyebrow';
+import { cn } from '@/lib/utils';
 
 type SurfaceSectionProps = {
   title: ReactNode;
@@ -24,26 +24,26 @@ export function SurfaceSection({
   bodyClassName,
   titleClassName,
   subtle = false,
-  paddingClassName = "p-4",
+  paddingClassName = 'p-4',
 }: SurfaceSectionProps) {
   return (
     <div
       className={cn(
-        subtle ? "console-surface-subtle" : "console-surface",
+        subtle ? 'console-surface-subtle' : 'console-surface',
         paddingClassName,
-        className,
+        className
       )}
     >
       <div
         className={cn(
-          "flex flex-wrap items-center justify-between gap-3",
-          headerClassName,
+          'flex flex-wrap items-center justify-between gap-3',
+          headerClassName
         )}
       >
-        <div className={cn("font-medium", titleClassName)}>{title}</div>
+        <div className={cn('font-medium', titleClassName)}>{title}</div>
         {action}
       </div>
-      <div className={cn("mt-4", bodyClassName)}>{children}</div>
+      <div className={cn('mt-4', bodyClassName)}>{children}</div>
     </div>
   );
 }
@@ -67,7 +67,7 @@ export function SurfaceLabelSection({
   headerClassName,
   bodyClassName,
   subtle = false,
-  paddingClassName = "p-4",
+  paddingClassName = 'p-4',
 }: SurfaceLabelSectionProps) {
   return (
     <SurfaceSection
@@ -76,7 +76,7 @@ export function SurfaceLabelSection({
       className={className}
       headerClassName={headerClassName}
       bodyClassName={bodyClassName}
-      titleClassName="font-normal"
+      titleClassName='font-normal'
       subtle={subtle}
       paddingClassName={paddingClassName}
     >

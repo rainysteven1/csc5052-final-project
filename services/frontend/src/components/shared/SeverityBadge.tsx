@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 
 type SeverityBadgeProps = {
   severity?: string | null;
@@ -6,8 +6,13 @@ type SeverityBadgeProps = {
 };
 
 export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
-  const value = severity || "unknown";
-  const variant = value === "high" ? "destructive" : value === "stable" ? "accent" : "outline";
+  const value = severity || 'unknown';
+  const variant =
+    value === 'high'
+      ? 'destructive'
+      : value === 'stable'
+        ? 'accent'
+        : 'outline';
   return (
     <Badge variant={variant} className={className}>
       {value}

@@ -1,4 +1,4 @@
-import { SurfaceInfoBlock } from "@/components/shared/SurfaceInfoBlock";
+import { SurfaceInfoBlock } from '@/components/shared/SurfaceInfoBlock';
 
 type ResultInfoBlockProps = {
   label: string;
@@ -10,7 +10,7 @@ type ResultInfoBlockProps = {
 export function ResultInfoBlock({
   label,
   value,
-  tone = "tone-secondary-soft",
+  tone = 'tone-secondary-soft',
   className,
 }: ResultInfoBlockProps) {
   return (

@@ -1,31 +1,30 @@
-import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
-import { type PipelineView } from "@/components/pipeline";
-import { useAnalysisStore } from "@/store/analysis-store";
+import { type PipelineView } from '@/components/pipeline';
 
-const pipelineViews: PipelineView[] = ["overview", "timeline", "evidence"];
+const pipelineViews: PipelineView[] = ['overview', 'timeline', 'evidence'];
 
 export function usePipelinePageState() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const viewParam = searchParams.get("view");
+  const viewParam = searchParams.get('view');
   const activeView = pipelineViews.includes(viewParam as PipelineView)
     ? (viewParam as PipelineView)
-    : "overview";
+    : 'overview';
 
   useEffect(() => {
-    if (searchParams.get("view") === activeView) {
+    if (searchParams.get('view') === activeView) {
       return;
     }
 
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("view", activeView);
+    nextParams.set('view', activeView);
     setSearchParams(nextParams, { replace: true });
   }, [activeView, searchParams, setSearchParams]);
 
   const handleViewChange = (view: PipelineView) => {
     const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("view", view);
+    nextParams.set('view', view);
     setSearchParams(nextParams, { replace: true });
   };
 

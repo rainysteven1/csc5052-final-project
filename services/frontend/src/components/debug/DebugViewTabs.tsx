@@ -1,11 +1,11 @@
-import { SectionTabs } from "@/components/shared/SectionTabs";
+import { SectionTabs } from '@/components/shared/SectionTabs';
 
-export type DebugView = "metadata" | "state" | "event";
+export type DebugView = 'metadata' | 'state' | 'event';
 
 const debugViews: Array<{ id: DebugView; label: string }> = [
-  { id: "metadata", label: "Metadata" },
-  { id: "state", label: "State JSON" },
-  { id: "event", label: "Event JSON" },
+  { id: 'metadata', label: 'Metadata' },
+  { id: 'state', label: 'State JSON' },
+  { id: 'event', label: 'Event JSON' },
 ];
 
 type DebugViewTabsProps = {

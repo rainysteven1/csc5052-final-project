@@ -1,11 +1,11 @@
-import { SectionTabs } from "@/components/shared/SectionTabs";
+import { SectionTabs } from '@/components/shared/SectionTabs';
 
-export type ResultsView = "summary" | "feedback" | "segments";
+export type ResultsView = 'summary' | 'feedback' | 'segments';
 
 const resultsViews: Array<{ id: ResultsView; label: string }> = [
-  { id: "summary", label: "Summary Lens" },
-  { id: "feedback", label: "Feedback Lens" },
-  { id: "segments", label: "Segment Lens" },
+  { id: 'summary', label: 'Summary Lens' },
+  { id: 'feedback', label: 'Feedback Lens' },
+  { id: 'segments', label: 'Segment Lens' },
 ];
 
 type ResultsViewTabsProps = {
@@ -14,5 +14,7 @@ type ResultsViewTabsProps = {
 };
 
 export function ResultsViewTabs({ active, onChange }: ResultsViewTabsProps) {
-  return <SectionTabs items={resultsViews} active={active} onChange={onChange} />;
+  return (
+    <SectionTabs items={resultsViews} active={active} onChange={onChange} />
+  );
 }

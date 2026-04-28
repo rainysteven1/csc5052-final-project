@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 type PipelineSelectableCardProps = {
   children: ReactNode;
@@ -17,12 +17,12 @@ export function PipelineSelectableCard({
 }: PipelineSelectableCardProps) {
   return (
     <button
-      type="button"
+      type='button'
       onClick={onClick}
       className={cn(
-        "console-selectable hover:shadow-soft",
-        selected && "console-selectable-active",
-        className,
+        'console-selectable hover:shadow-soft',
+        selected && 'console-selectable-active',
+        className
       )}
     >
       {children}

@@ -1,23 +1,24 @@
-import type { AnalysisJob, AnalysisStateResult, ResultSummary, SegmentLike } from "@/types/analysis";
-
-import { asRecord, asStringArray } from "@/lib/analysis-core";
+import { asRecord, asStringArray } from '@/lib/analysis-core';
+import type {
+  AnalysisJob,
+  AnalysisStateResult,
+  ResultSummary,
+  SegmentLike,
+} from '@/types/analysis';
 
 export function getCoachingSummary(
   resultPayload: Record<string, unknown>,
   coaching: Record<string, unknown>,
-  judgment: Record<string, unknown>,
+  judgment: Record<string, unknown>
 ) {
   return String(
-    resultPayload.summary ||
-      coaching.summary ||
-      judgment.summary ||
-      "--",
+    resultPayload.summary || coaching.summary || judgment.summary || '--'
   );
 }
 
 export function getCoachingFocus(
   coaching: Record<string, unknown>,
-  judgment: Record<string, unknown>,
+  judgment: Record<string, unknown>
 ) {
   if (asStringArray(coaching.coaching_focus).length) {
     return asStringArray(coaching.coaching_focus);
@@ -27,7 +28,7 @@ export function getCoachingFocus(
 
 export function getCoachingStrengths(
   coaching: Record<string, unknown>,
-  judgment: Record<string, unknown>,
+  judgment: Record<string, unknown>
 ) {
   if (asStringArray(coaching.strengths).length) {
     return asStringArray(coaching.strengths);
@@ -35,12 +36,17 @@ export function getCoachingStrengths(
   return asStringArray(judgment.strengths);
 }
 
-export function buildResultSummary(finalState: AnalysisStateResult | null, job: AnalysisJob | null): ResultSummary {
+export function buildResultSummary(
+  finalState: AnalysisStateResult | null,
+  job: AnalysisJob | null
+): ResultSummary {
   const resultPayload = asRecord(finalState?.result) || {};
   const agentOutputs = asRecord(finalState?.agent_outputs) || {};
   const coaching = asRecord(agentOutputs.coaching) || {};
   const judgment = asRecord(agentOutputs.judgment) || {};
-  const feedbackRows = Array.isArray(finalState?.agent_outputs?.feedback) ? finalState.agent_outputs.feedback : [];
+  const feedbackRows = Array.isArray(finalState?.agent_outputs?.feedback)
+    ? finalState.agent_outputs.feedback
+    : [];
   const segmentResults = Array.isArray(resultPayload.segment_results)
     ? (resultPayload.segment_results as SegmentLike[])
     : finalState?.segments || [];
@@ -50,13 +56,17 @@ export function buildResultSummary(finalState: AnalysisStateResult | null, job: 
 
   return {
     overallScore:
-      typeof resultPayload.overall_score === "number"
+      typeof resultPayload.overall_score === 'number'
         ? resultPayload.overall_score
-        : typeof job?.overall_score === "number"
+        : typeof job?.overall_score === 'number'
           ? job.overall_score
           : null,
-    level: typeof resultPayload.level === "string" ? resultPayload.level : job?.level || null,
-    summary: coachingSummary !== "--" ? coachingSummary : String(job?.summary || "--"),
+    level:
+      typeof resultPayload.level === 'string'
+        ? resultPayload.level
+        : job?.level || null,
+    summary:
+      coachingSummary !== '--' ? coachingSummary : String(job?.summary || '--'),
     dominantCauses: asStringArray(resultPayload.dominant_causes).length
       ? asStringArray(resultPayload.dominant_causes)
       : job?.dominant_causes || [],
@@ -66,10 +76,11 @@ export function buildResultSummary(finalState: AnalysisStateResult | null, job: 
     errors: finalState?.errors || (job?.error ? [job.error] : []),
     feedbackRows,
     segmentResults,
-    transcript: finalState?.transcript || "",
+    transcript: finalState?.transcript || '',
     requestId: finalState?.request_id || job?.analysis_id || null,
     scenario: finalState?.scenario || job?.scenario || null,
-    coachingProvider: typeof coaching.provider === "string" ? coaching.provider : null,
-    coachingModel: typeof coaching.model === "string" ? coaching.model : null,
+    coachingProvider:
+      typeof coaching.provider === 'string' ? coaching.provider : null,
+    coachingModel: typeof coaching.model === 'string' ? coaching.model : null,
   };
 }

@@ -1,2 +1,2 @@
-export * from "./ThemeControl";
-export * from "./ThemeSettingsDrawer";
+export * from './ThemeControl';
+export * from './ThemeSettingsDrawer';

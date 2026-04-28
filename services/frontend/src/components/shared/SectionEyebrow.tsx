@@ -1,18 +1,15 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 type SectionEyebrowProps = {
   children: ReactNode;
   className?: string;
 };
 
-export function SectionEyebrow({
-  children,
-  className,
-}: SectionEyebrowProps) {
+export function SectionEyebrow({ children, className }: SectionEyebrowProps) {
   return (
-    <div className={cn("ui-label-sm text-muted-foreground", className)}>
+    <div className={cn('ui-label-sm text-muted-foreground', className)}>
       {children}
     </div>
   );

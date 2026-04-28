@@ -1,15 +1,17 @@
-import { PageSectionCard } from "@/components/shared/PageSectionCard";
-import { StatCardGrid, type StatCardItem } from "@/components/shared/StatCardGrid";
-import { prettifyNode } from "@/lib/analysis-helpers";
-import { useAnalysisStore } from "@/store/analysis-store";
-import { pipelineOrder } from "@/types/analysis";
-
-import type { PipelineView } from "@/components/pipeline/PipelineViewTabs";
+import type { PipelineView } from '@/components/pipeline/PipelineViewTabs';
+import { PageSectionCard } from '@/components/shared/PageSectionCard';
+import {
+  StatCardGrid,
+  type StatCardItem,
+} from '@/components/shared/StatCardGrid';
+import { prettifyNode } from '@/lib/analysis-helpers';
+import { useAnalysisStore } from '@/store/analysis-store';
+import { pipelineOrder } from '@/types/analysis';
 
 const lensConfig: Record<PipelineView, { title: string; eyebrow: string }> = {
-  overview: { title: "Overview lens", eyebrow: "Coverage" },
-  evidence: { title: "Evidence lens", eyebrow: "Signals" },
-  timeline: { title: "Timeline lens", eyebrow: "Stream" },
+  overview: { title: 'Overview lens', eyebrow: 'Coverage' },
+  evidence: { title: 'Evidence lens', eyebrow: 'Signals' },
+  timeline: { title: 'Timeline lens', eyebrow: 'Stream' },
 };
 
 export function PipelineLensPanel({ view }: { view: PipelineView }) {
@@ -21,7 +23,9 @@ export function PipelineLensPanel({ view }: { view: PipelineView }) {
   const finalState = useAnalysisStore((state) => state.finalState);
 
   const agentOutputs =
-    finalState && typeof finalState.agent_outputs === "object" && finalState.agent_outputs !== null
+    finalState &&
+    typeof finalState.agent_outputs === 'object' &&
+    finalState.agent_outputs !== null
       ? finalState.agent_outputs
       : null;
 
@@ -30,19 +34,69 @@ export function PipelineLensPanel({ view }: { view: PipelineView }) {
 
   const cardsByView: Record<PipelineView, StatCardItem[]> = {
     overview: [
-      { label: "Stage coverage", value: `${completedSteps}/${totalSteps}`, meta: "completed / total" },
-      { label: "Active node", value: prettifyNode(job?.current_node || activeNode), meta: mode === "live" ? "live focus" : "replay focus" },
-      { label: "Event flow", value: `${events.length}`, meta: mode === "live" ? "captured events" : `frame ${events.length ? replayCursor + 1 : 0}` },
+      {
+        label: 'Stage coverage',
+        value: `${completedSteps}/${totalSteps}`,
+        meta: 'completed / total',
+      },
+      {
+        label: 'Active node',
+        value: prettifyNode(job?.current_node || activeNode),
+        meta: mode === 'live' ? 'live focus' : 'replay focus',
+      },
+      {
+        label: 'Event flow',
+        value: `${events.length}`,
+        meta:
+          mode === 'live'
+            ? 'captured events'
+            : `frame ${events.length ? replayCursor + 1 : 0}`,
+      },
     ],
     evidence: [
-      { label: "Lexical rows", value: String(Array.isArray(agentOutputs?.lexical) ? agentOutputs.lexical.length : 0), meta: "rewrite + trigger rows" },
-      { label: "Prosody rows", value: String(Array.isArray(agentOutputs?.prosody) ? agentOutputs.prosody.length : 0), meta: "delivery signal rows" },
-      { label: "Disfluency rows", value: String(Array.isArray(agentOutputs?.disfluency) ? agentOutputs.disfluency.length : 0), meta: "fluency issue rows" },
+      {
+        label: 'Lexical rows',
+        value: String(
+          Array.isArray(agentOutputs?.lexical) ? agentOutputs.lexical.length : 0
+        ),
+        meta: 'rewrite + trigger rows',
+      },
+      {
+        label: 'Prosody rows',
+        value: String(
+          Array.isArray(agentOutputs?.prosody) ? agentOutputs.prosody.length : 0
+        ),
+        meta: 'delivery signal rows',
+      },
+      {
+        label: 'Disfluency rows',
+        value: String(
+          Array.isArray(agentOutputs?.disfluency)
+            ? agentOutputs.disfluency.length
+            : 0
+        ),
+        meta: 'fluency issue rows',
+      },
     ],
     timeline: [
-      { label: "Stream mode", value: mode === "live" ? "SSE live" : "Replay", meta: mode === "live" ? "backend event feed" : "static playback" },
-      { label: "Visible frame", value: mode === "replay" ? `${events.length ? replayCursor + 1 : 0}/${events.length}` : `${events.length}`, meta: mode === "replay" ? "current / total" : "captured events" },
-      { label: "Node context", value: prettifyNode(job?.current_node || activeNode), meta: "paired spotlight context" },
+      {
+        label: 'Stream mode',
+        value: mode === 'live' ? 'SSE live' : 'Replay',
+        meta: mode === 'live' ? 'backend event feed' : 'static playback',
+      },
+      {
+        label: 'Visible frame',
+        value:
+          mode === 'replay'
+            ? `${events.length ? replayCursor + 1 : 0}/${events.length}`
+            : `${events.length}`,
+        meta: mode === 'replay' ? 'current / total' : 'captured events',
+      },
+      {
+        label: 'Node context',
+        value: prettifyNode(job?.current_node || activeNode),
+        meta: 'paired spotlight context',
+      },
     ],
   };
 

@@ -1,11 +1,11 @@
-import { SectionTabs } from "@/components/shared/SectionTabs";
+import { SectionTabs } from '@/components/shared/SectionTabs';
 
-export type PipelineView = "overview" | "evidence" | "timeline";
+export type PipelineView = 'overview' | 'evidence' | 'timeline';
 
 const pipelineViews: Array<{ id: PipelineView; label: string }> = [
-  { id: "overview", label: "Overview" },
-  { id: "evidence", label: "Evidence Lens" },
-  { id: "timeline", label: "Timeline Lens" },
+  { id: 'overview', label: 'Overview' },
+  { id: 'evidence', label: 'Evidence Lens' },
+  { id: 'timeline', label: 'Timeline Lens' },
 ];
 
 type PipelineViewTabsProps = {
@@ -14,5 +14,7 @@ type PipelineViewTabsProps = {
 };
 
 export function PipelineViewTabs({ active, onChange }: PipelineViewTabsProps) {
-  return <SectionTabs items={pipelineViews} active={active} onChange={onChange} />;
+  return (
+    <SectionTabs items={pipelineViews} active={active} onChange={onChange} />
+  );
 }

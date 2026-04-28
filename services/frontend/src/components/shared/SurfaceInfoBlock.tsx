@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 type SurfaceInfoBlockProps = {
   label: string;
@@ -15,19 +15,19 @@ type SurfaceInfoBlockProps = {
 export function SurfaceInfoBlock({
   label,
   value,
-  tone = "console-surface",
+  tone = 'console-surface',
   className,
   valueClassName,
   detail,
   detailClassName,
 }: SurfaceInfoBlockProps) {
   return (
-    <div className={cn("rounded-[22px] p-4", tone, className)}>
-      <div className="ui-label-sm text-muted-foreground">{label}</div>
+    <div className={cn('rounded-[22px] p-4', tone, className)}>
+      <div className='ui-label-sm text-muted-foreground'>{label}</div>
       <div
         className={cn(
-          "mt-2 break-words text-sm leading-6 text-foreground",
-          valueClassName,
+          'mt-2 break-words text-sm leading-6 text-foreground',
+          valueClassName
         )}
       >
         {value}
@@ -35,8 +35,8 @@ export function SurfaceInfoBlock({
       {detail ? (
         <div
           className={cn(
-            "mt-2 break-words text-sm leading-6 text-muted-foreground",
-            detailClassName,
+            'mt-2 break-words text-sm leading-6 text-muted-foreground',
+            detailClassName
           )}
         >
           {detail}

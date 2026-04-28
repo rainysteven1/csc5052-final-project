@@ -1,17 +1,16 @@
 # SpeakSure++ Frontend
 
-Vite + React + TypeScript frontend for the SpeakSure++ backend API.
+Vite + React + TypeScript frontend for the SpeakSure++ analysis platform.
 
-## What it supports
+## What It Supports
 
-- live run submission through `POST /api/v1/analyses`
+- live analysis submission through `POST /api/v1/analyses`
 - live SSE updates through `GET /api/v1/analyses/{analysis_id}/events`
-- static replay loading through `POST /api/v1/replays/load`
-- routed desktop workspace with separate `Run`, `Pipeline`, `Results`, and `Debug` pages
-- page-level secondary navigation with remembered subviews
-- shareable URL state for selected views, nodes, replay frames, feedback cards, segments, and debug panels
+- replay loading through `POST /api/v1/replays/load`
+- routed desktop workspace with `Run`, `Pipeline`, `Results`, and `Debug`
+- fake showcase mode backed by a file-driven demo backend
 
-## Desktop Workspace
+## Workspace Routes
 
 Top-level routes:
 
@@ -22,46 +21,108 @@ Top-level routes:
 
 Secondary views are controlled with `?view=`.
 
-Important shareable examples:
+## Env Model
 
-- `/run?view=setup&mode=live&scenario=presentation`
-- `/pipeline?view=spotlight&node=coaching`
-- `/pipeline?view=timeline&node=coaching&frame=3`
-- `/results?view=feedback&feedback=seg_001`
-- `/results?view=segments&segment=seg_001`
-- `/debug?view=overview&panel=result-json`
+This frontend uses service-local env files inside `services/frontend/`.
 
-## Local Run
+- `.env` = normal backend mode
+- `.env.fake` = fake showcase mode
 
-From the repository root, start the backend first:
+Important env keys:
+
+- `VITE_APP_BACKEND_MODE=live|fake`
+- `VITE_API_TARGET=http://host:port`
+- `VITE_API_BASE_URL=https://...` for separately deployed backends
+- `VITE_HOST`
+- `VITE_PORT`
+- `VITE_USE_POLLING`
+- `VITE_POLLING_INTERVAL`
+
+The Vite proxy reads `VITE_API_TARGET` from the active env file.
+
+## Normal Deployment
+
+Use this when the frontend should talk to the real Go backend.
+
+### Default Env
+
+`services/frontend/.env`
+
+```env
+VITE_APP_BACKEND_MODE=live
+VITE_API_TARGET=http://127.0.0.1:8000
+```
+
+### Start Locally
+
+From the repository root:
 
 ```bash
 just run-backend
-```
-
-Then start the frontend:
-
-```bash
 just run-frontend
 ```
 
-Default frontend address:
+### Run-Page Behavior
 
-- `http://127.0.0.1:5173`
+In normal mode, the Run page shows:
 
-Default backend target:
+- audio upload
+- scenario selector
+- transcript override
+- manual replay path input
 
-- `http://127.0.0.1:8000`
+Showcase gallery is hidden in this mode.
 
-If you need a different backend target:
+## Fake Showcase Deployment
+
+Use this when you want a demo-friendly frontend that other people can open without the real analysis stack.
+
+### Default Env
+
+`services/frontend/.env.fake`
+
+```env
+VITE_APP_BACKEND_MODE=fake
+VITE_API_TARGET=http://127.0.0.1:18080
+```
+
+### Start Locally
+
+From the repository root:
 
 ```bash
-export VITE_API_PROXY_TARGET=http://127.0.0.1:8000
+just run-fake-backend
+just run-fake-frontend
 ```
+
+### Run-Page Behavior
+
+In fake mode, the Run page:
+
+- hides audio upload
+- hides scenario selection
+- hides transcript override
+- hides manual replay path input
+- shows `Showcase gallery`
+- renders showcase cards in a single vertical column
+- supports one-click `Open replay` and `Launch live`
+
+## Separate Frontend Deployment
+
+If the frontend is deployed separately from the backend, set an absolute API base URL:
+
+```bash
+export VITE_API_BASE_URL=https://your-backend.example.com
+```
+
+For Vercel deployment:
+
+- `services/frontend/vercel.json` already includes SPA rewrites
+- set `VITE_API_BASE_URL` in the project settings if the backend is hosted elsewhere
 
 ## Replay Mode
 
-You can load a replay result like:
+Example replay file:
 
 - `/tmp/speaksure-one-round/en_test_0315.presentation.json`
 
@@ -84,15 +145,25 @@ export VITE_USE_POLLING=true
 export VITE_POLLING_INTERVAL=1000
 ```
 
-If your system watcher limit is high enough and you want to disable polling:
+If your machine does not need polling:
 
 ```bash
 export VITE_USE_POLLING=false
 ```
 
-## Production Build
+## Build And Validation
+
+Build:
+
+```bash
+just frontend-build
+```
+
+Checks:
 
 ```bash
 cd services/frontend
-npm run build
+corepack pnpm type-check
+corepack pnpm lint
+corepack pnpm format:check
 ```

@@ -1,4 +1,4 @@
-import { SectionEyebrow } from "@/components/shared/SectionEyebrow";
+import { SectionEyebrow } from '@/components/shared/SectionEyebrow';
 
 type SessionSummaryBoxProps = {
   label: string;
@@ -6,15 +6,19 @@ type SessionSummaryBoxProps = {
   large?: boolean;
 };
 
-export function SessionSummaryBox({ label, value, large = false }: SessionSummaryBoxProps) {
+export function SessionSummaryBox({
+  label,
+  value,
+  large = false,
+}: SessionSummaryBoxProps) {
   return (
-    <div className="console-surface p-4">
+    <div className='console-surface p-4'>
       <SectionEyebrow>{label}</SectionEyebrow>
       <div
         className={
           large
-            ? "mt-2 break-words text-sm leading-6 text-foreground"
-            : "mt-2 break-words text-sm font-medium text-foreground"
+            ? 'mt-2 break-words text-sm leading-6 text-foreground'
+            : 'mt-2 break-words text-sm font-medium text-foreground'
         }
       >
         {value}

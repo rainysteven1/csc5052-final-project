@@ -1,9 +1,20 @@
-import type { AnalysisEvent, AnalysisJob, AnalysisStateResult, NodeName } from "@/types/analysis";
-import { pipelineOrder } from "@/types/analysis";
+import {
+  asRecord,
+  asStringArray,
+  normalizeNodeName,
+  prettifyNode,
+} from '@/lib/analysis-core';
+import type {
+  AnalysisEvent,
+  AnalysisJob,
+  AnalysisStateResult,
+  NodeName,
+} from '@/types/analysis';
+import { pipelineOrder } from '@/types/analysis';
 
-import { asRecord, asStringArray, normalizeNodeName, prettifyNode } from "@/lib/analysis-core";
-
-export function getWorkflowNodes(result: AnalysisStateResult | null): NodeName[] {
+export function getWorkflowNodes(
+  result: AnalysisStateResult | null
+): NodeName[] {
   const meta = asRecord(result?.meta);
   const nodes = meta?.workflow_nodes;
   if (!Array.isArray(nodes) || !nodes.length) {
@@ -20,29 +31,39 @@ export function getWorkflowNodes(result: AnalysisStateResult | null): NodeName[]
   return normalized.length ? normalized : pipelineOrder;
 }
 
-export function getWorkflowSubsteps(result: AnalysisStateResult | null, node: NodeName): string[] {
+export function getWorkflowSubsteps(
+  result: AnalysisStateResult | null,
+  node: NodeName
+): string[] {
   const meta = asRecord(result?.meta);
   const substeps = asRecord(meta?.workflow_substeps)?.[node];
   return Array.isArray(substeps) ? substeps.map((item) => String(item)) : [];
 }
 
-export function getActiveSubstep(payload: Record<string, unknown> | null, node: NodeName): string | null {
+export function getActiveSubstep(
+  payload: Record<string, unknown> | null,
+  node: NodeName
+): string | null {
   if (!payload) {
     return null;
   }
-  const payloadNode = typeof payload.node === "string" ? normalizeNodeName(payload.node) : null;
+  const payloadNode =
+    typeof payload.node === 'string' ? normalizeNodeName(payload.node) : null;
   if (payloadNode && payloadNode !== node) {
     return null;
   }
   const substep = payload.substep;
-  return typeof substep === "string" ? substep : null;
+  return typeof substep === 'string' ? substep : null;
 }
 
-export function nodeSnapshot(node: NodeName, result: AnalysisStateResult): Record<string, unknown> {
+export function nodeSnapshot(
+  node: NodeName,
+  result: AnalysisStateResult
+): Record<string, unknown> {
   const agentOutputs = asRecord(result.agent_outputs) || {};
   const meta = asRecord(result.meta) || {};
 
-  if (node === "input") {
+  if (node === 'input') {
     return {
       audio: result.audio,
       transcript: result.transcript,
@@ -54,11 +75,13 @@ export function nodeSnapshot(node: NodeName, result: AnalysisStateResult): Recor
     };
   }
 
-  if (node === "evidence") {
+  if (node === 'evidence') {
     return {
       lexical: Array.isArray(agentOutputs.lexical) ? agentOutputs.lexical : [],
       prosody: Array.isArray(agentOutputs.prosody) ? agentOutputs.prosody : [],
-      disfluency: Array.isArray(agentOutputs.disfluency) ? agentOutputs.disfluency : [],
+      disfluency: Array.isArray(agentOutputs.disfluency)
+        ? agentOutputs.disfluency
+        : [],
       context: asRecord(agentOutputs.context) || {},
       evidence_summary: asRecord(agentOutputs.evidence_summary) || {},
       segments: result.segments,
@@ -66,11 +89,13 @@ export function nodeSnapshot(node: NodeName, result: AnalysisStateResult): Recor
     };
   }
 
-  if (node === "coaching") {
+  if (node === 'coaching') {
     return {
       judgment: asRecord(agentOutputs.judgment) || {},
       coaching: asRecord(agentOutputs.coaching) || {},
-      feedback: Array.isArray(agentOutputs.feedback) ? agentOutputs.feedback : [],
+      feedback: Array.isArray(agentOutputs.feedback)
+        ? agentOutputs.feedback
+        : [],
       result: result.result,
       segments: result.segments,
     };
@@ -85,22 +110,31 @@ export function nodeSnapshot(node: NodeName, result: AnalysisStateResult): Recor
   };
 }
 
-export function buildReplayEvents(result: AnalysisStateResult, replayPath: string): { job: AnalysisJob; events: AnalysisEvent[] } {
+export function buildReplayEvents(
+  result: AnalysisStateResult,
+  replayPath: string
+): { job: AnalysisJob; events: AnalysisEvent[] } {
   const normalizedResult = result;
   const nodes = getWorkflowNodes(normalizedResult);
   const baseTime = Date.now();
   const audio = asRecord(normalizedResult.audio);
-  const sourcePath = typeof audio?.source_path === "string" ? audio.source_path : replayPath;
-  const audioFilename = sourcePath.split("/").pop() || "replay.json";
+  const sourcePath =
+    typeof audio?.source_path === 'string' ? audio.source_path : replayPath;
+  const audioFilename = sourcePath.split('/').pop() || 'replay.json';
   const resultPayload = asRecord(normalizedResult.result) || {};
-  const overallScore = typeof resultPayload.overall_score === "number" ? resultPayload.overall_score : null;
-  const level = typeof resultPayload.level === "string" ? resultPayload.level : null;
-  const summary = typeof resultPayload.summary === "string" ? resultPayload.summary : null;
+  const overallScore =
+    typeof resultPayload.overall_score === 'number'
+      ? resultPayload.overall_score
+      : null;
+  const level =
+    typeof resultPayload.level === 'string' ? resultPayload.level : null;
+  const summary =
+    typeof resultPayload.summary === 'string' ? resultPayload.summary : null;
   const dominantCauses = asStringArray(resultPayload.dominant_causes);
 
   const job: AnalysisJob = {
     analysis_id: `replay_${normalizedResult.request_id}`,
-    status: normalizedResult.status === "failed" ? "failed" : "completed",
+    status: normalizedResult.status === 'failed' ? 'failed' : 'completed',
     scenario: normalizedResult.scenario,
     audio_filename: audioFilename,
     audio_path: sourcePath,
@@ -112,7 +146,7 @@ export function buildReplayEvents(result: AnalysisStateResult, replayPath: strin
     level,
     summary,
     dominant_causes: dominantCauses,
-    current_node: "finalize",
+    current_node: 'finalize',
     completed_steps: nodes.length,
     total_steps: nodes.length,
     error: normalizedResult.errors[0] || null,
@@ -120,7 +154,7 @@ export function buildReplayEvents(result: AnalysisStateResult, replayPath: strin
 
   const events: AnalysisEvent[] = nodes.map((node, index) => ({
     analysis_id: job.analysis_id,
-    event_type: "node_completed",
+    event_type: 'node_completed',
     status: job.status,
     node,
     step_index: index + 1,
@@ -143,9 +177,9 @@ export function buildReplayEvents(result: AnalysisStateResult, replayPath: strin
 
   events.push({
     analysis_id: job.analysis_id,
-    event_type: "analysis_completed",
+    event_type: 'analysis_completed',
     status: job.status,
-    node: "finalize",
+    node: 'finalize',
     step_index: nodes.length,
     total_steps: nodes.length,
     progress: 1,

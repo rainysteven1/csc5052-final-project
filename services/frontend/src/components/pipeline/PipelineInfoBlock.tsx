@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { SurfaceInfoBlock } from "@/components/shared/SurfaceInfoBlock";
+import { SurfaceInfoBlock } from '@/components/shared/SurfaceInfoBlock';
 
 type PipelineInfoBlockProps = {
   label: string;
@@ -14,7 +14,7 @@ type PipelineInfoBlockProps = {
 export function PipelineInfoBlock({
   label,
   value,
-  tone = "console-surface",
+  tone = 'console-surface',
   className,
   valueClassName,
   detail,

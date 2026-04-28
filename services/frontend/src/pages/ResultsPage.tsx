@@ -1,5 +1,5 @@
-import { ResultsControlBar, ResultsWorkspace } from "@/components/results";
-import { useResultsPageState } from "@/hooks/useResultsPageState";
+import { ResultsControlBar, ResultsWorkspace } from '@/components/results';
+import { useResultsPageState } from '@/hooks/useResultsPageState';
 
 export function ResultsPage() {
   const {
@@ -12,7 +12,7 @@ export function ResultsPage() {
   } = useResultsPageState();
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
+    <div className='flex flex-col gap-5 pb-6'>
       <ResultsControlBar activeView={activeView} onChange={handleViewChange} />
       <div>
         <ResultsWorkspace

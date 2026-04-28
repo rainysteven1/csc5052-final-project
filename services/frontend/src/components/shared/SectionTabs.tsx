@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export type SectionTabItem<T extends string> = {
   id: T;
@@ -20,18 +20,18 @@ export function SectionTabs<T extends string>({
   className,
 }: SectionTabsProps<T>) {
   return (
-    <div className={cn("console-tab-shell shadow-soft", className)}>
-      <div className="flex flex-wrap gap-2">
+    <div className={cn('console-tab-shell shadow-soft', className)}>
+      <div className='flex flex-wrap gap-2'>
         {items.map((item) => (
           <Button
             key={item.id}
-            type="button"
-            variant={item.id === active ? "default" : "secondary"}
-            size="sm"
+            type='button'
+            variant={item.id === active ? 'default' : 'secondary'}
+            size='sm'
             onClick={() => onChange(item.id)}
             className={cn(
-              "min-w-[120px] justify-center",
-              item.id !== active && "console-tab-idle",
+              'min-w-[120px] justify-center',
+              item.id !== active && 'console-tab-idle'
             )}
           >
             {item.label}

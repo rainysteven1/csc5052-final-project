@@ -1,11 +1,11 @@
-import { EventDetailPanel } from "@/components/pipeline/EventDetailPanel";
-import { EvidenceDrilldownPanel } from "@/components/pipeline/EvidenceDrilldownPanel";
-import { NodeDetailPanel } from "@/components/pipeline/NodeDetailPanel";
-import { NodeGrid } from "@/components/pipeline/NodeGrid";
-import { TimelinePanel } from "@/components/pipeline/TimelinePanel";
-import type { PipelineView } from "@/components/pipeline/PipelineViewTabs";
+import { EventDetailPanel } from '@/components/pipeline/EventDetailPanel';
+import { EvidenceDrilldownPanel } from '@/components/pipeline/EvidenceDrilldownPanel';
+import { NodeDetailPanel } from '@/components/pipeline/NodeDetailPanel';
+import { NodeGrid } from '@/components/pipeline/NodeGrid';
+import type { PipelineView } from '@/components/pipeline/PipelineViewTabs';
+import { TimelinePanel } from '@/components/pipeline/TimelinePanel';
 
-const stackedColumnClass = "grid gap-5";
+const stackedColumnClass = 'grid gap-5';
 
 type PipelineWorkspaceColumnsProps = {
   view: PipelineView;
@@ -36,14 +36,14 @@ function buildPipelineLeftColumn(view: PipelineView) {
 function buildPipelineRightColumn(view: PipelineView) {
   const columns: Record<PipelineView, JSX.Element | null> = {
     overview: (
-      <div className="min-h-0">
+      <div className='min-h-0'>
         <NodeDetailPanel />
       </div>
     ),
     evidence: null,
     timeline: (
       <div className={stackedColumnClass}>
-        <div className="min-h-0">
+        <div className='min-h-0'>
           <EventDetailPanel />
         </div>
       </div>

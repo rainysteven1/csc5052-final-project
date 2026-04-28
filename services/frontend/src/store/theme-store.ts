@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 import {
   applyThemeSettings,
@@ -8,10 +8,10 @@ import {
   type ThemePresetId,
   type ThemeSettings,
   type ThemeSurfaceMode,
-} from "@/lib/theme";
+} from '@/lib/theme';
 
 const initialThemeSettings =
-  typeof window === "undefined" ? defaultThemeSettings : readThemeSettings();
+  typeof window === 'undefined' ? defaultThemeSettings : readThemeSettings();
 
 applyThemeSettings(initialThemeSettings);
 

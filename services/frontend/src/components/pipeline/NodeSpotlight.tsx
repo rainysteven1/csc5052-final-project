@@ -3,9 +3,13 @@ import {
   EvidenceSpotlight,
   FinalizeSpotlight,
   InputSpotlight,
-} from "@/components/pipeline/spotlight";
-import { asRecord, getSelectedNodeSnapshot, normalizeAnalysisState } from "@/lib/analysis-helpers";
-import type { AnalysisStateResult, NodeName } from "@/types/analysis";
+} from '@/components/pipeline/spotlight';
+import {
+  asRecord,
+  getSelectedNodeSnapshot,
+  normalizeAnalysisState,
+} from '@/lib/analysis-helpers';
+import type { AnalysisStateResult, NodeName } from '@/types/analysis';
 
 type NodeSpotlightProps = {
   node: NodeName;
@@ -20,10 +24,10 @@ export function NodeSpotlight({ node, result, payload }: NodeSpotlightProps) {
   const currentAgentOutputs = asRecord(current?.agent_outputs) || {};
 
   if (!snapshot || !current) {
-    return <div className="text-sm text-muted-foreground">--</div>;
+    return <div className='text-sm text-muted-foreground'>--</div>;
   }
 
-  if (node === "input") {
+  if (node === 'input') {
     return (
       <InputSpotlight
         snapshot={snapshot as Record<string, unknown>}
@@ -33,7 +37,7 @@ export function NodeSpotlight({ node, result, payload }: NodeSpotlightProps) {
     );
   }
 
-  if (node === "evidence") {
+  if (node === 'evidence') {
     return (
       <EvidenceSpotlight
         snapshot={snapshot as Record<string, unknown>}
@@ -43,7 +47,7 @@ export function NodeSpotlight({ node, result, payload }: NodeSpotlightProps) {
     );
   }
 
-  if (node === "coaching") {
+  if (node === 'coaching') {
     return (
       <CoachingSpotlight
         snapshot={snapshot as Record<string, unknown>}

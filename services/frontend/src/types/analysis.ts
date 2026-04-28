@@ -1,14 +1,9 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  AudioLines,
-  FileJson2,
-  Layers3,
-  Wand2,
-} from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
+import { AudioLines, FileJson2, Layers3, Wand2 } from 'lucide-react';
 
-export type JobStatus = "queued" | "running" | "completed" | "failed";
-export type AppMode = "live" | "replay";
-export type AppTab = "run" | "pipeline" | "results" | "debug";
+export type JobStatus = 'queued' | 'running' | 'completed' | 'failed';
+export type AppMode = 'live' | 'replay';
+export type AppTab = 'run' | 'pipeline' | 'results' | 'debug';
 
 export type AnalysisJob = {
   analysis_id: string;
@@ -87,11 +82,7 @@ export type AnalysisStateResult = {
   meta: Record<string, unknown>;
 };
 
-export type NodeName =
-  | "input"
-  | "evidence"
-  | "coaching"
-  | "finalize";
+export type NodeName = 'input' | 'evidence' | 'coaching' | 'finalize';
 
 export type NodeVisual = {
   node: NodeName;
@@ -139,7 +130,7 @@ export type ApiErrorResponse = {
   trace_id?: string;
 };
 
-export type IssueTone = "warning" | "destructive";
+export type IssueTone = 'warning' | 'destructive';
 
 export type RuntimeIssue = {
   message: string;
@@ -149,14 +140,28 @@ export type RuntimeIssue = {
   traceId?: string;
 };
 
-export const scenarioOptions = ["interview", "presentation", "academic", "business", "casual"];
-export const defaultReplayPath = "/tmp/speaksure-one-round/en_test_0315.presentation.json";
+export type DemoCatalogItem = {
+  id: string;
+  label: string;
+  replay_path: string;
+  audio_filename: string;
+};
+
+export const scenarioOptions = [
+  'interview',
+  'presentation',
+  'academic',
+  'business',
+  'casual',
+];
+export const defaultReplayPath =
+  '/tmp/speaksure-one-round/en_test_0315.presentation.json';
 
 export const pipelineOrder: NodeName[] = [
-  "input",
-  "evidence",
-  "coaching",
-  "finalize",
+  'input',
+  'evidence',
+  'coaching',
+  'finalize',
 ];
 
 export const appTabs: Array<{
@@ -166,28 +171,28 @@ export const appTabs: Array<{
   path: string;
 }> = [
   {
-    id: "run",
-    label: "Run",
-    description: "Configure live or replay sessions.",
-    path: "/run",
+    id: 'run',
+    label: 'Run',
+    description: 'Configure live or replay sessions.',
+    path: '/run',
   },
   {
-    id: "pipeline",
-    label: "Pipeline",
-    description: "Track node progress and timing.",
-    path: "/pipeline",
+    id: 'pipeline',
+    label: 'Pipeline',
+    description: 'Track node progress and timing.',
+    path: '/pipeline',
   },
   {
-    id: "results",
-    label: "Results",
-    description: "Read the final coaching output.",
-    path: "/results",
+    id: 'results',
+    label: 'Results',
+    description: 'Read the final coaching output.',
+    path: '/results',
   },
   {
-    id: "debug",
-    label: "Debug",
-    description: "Inspect raw payloads and runtime metadata.",
-    path: "/debug",
+    id: 'debug',
+    label: 'Debug',
+    description: 'Inspect raw payloads and runtime metadata.',
+    path: '/debug',
   },
 ];
 
@@ -199,8 +204,8 @@ export const pipelineIcons: Record<NodeName, LucideIcon> = {
 };
 
 export const nodeAccentClasses: Record<NodeName, string> = {
-  input: "from-orange-400/25 to-amber-300/10",
-  evidence: "from-cyan-400/20 to-violet-300/10",
-  coaching: "from-emerald-400/25 to-lime-300/10",
-  finalize: "from-indigo-400/20 to-slate-300/10",
+  input: 'from-orange-400/25 to-amber-300/10',
+  evidence: 'from-cyan-400/20 to-violet-300/10',
+  coaching: 'from-emerald-400/25 to-lime-300/10',
+  finalize: 'from-indigo-400/20 to-slate-300/10',
 };

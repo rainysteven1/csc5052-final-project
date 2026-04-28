@@ -1,7 +1,7 @@
-import { ResultsLensPanel } from "@/components/results/ResultsLensPanel";
-import { getResultsWorkspaceColumns } from "@/components/results/ResultsWorkspaceColumns";
-import { WorkspaceColumns } from "@/components/shared/WorkspaceColumns";
-import type { ResultsView } from "@/components/results/ResultsViewTabs";
+import { ResultsLensPanel } from '@/components/results/ResultsLensPanel';
+import type { ResultsView } from '@/components/results/ResultsViewTabs';
+import { getResultsWorkspaceColumns } from '@/components/results/ResultsWorkspaceColumns';
+import { WorkspaceColumns } from '@/components/shared/WorkspaceColumns';
 
 type ResultsWorkspaceProps = {
   view: ResultsView;
@@ -27,7 +27,7 @@ export function ResultsWorkspace({
   });
 
   return (
-    <div className="grid gap-5">
+    <div className='grid gap-5'>
       <ResultsLensPanel
         view={view}
         activeFeedbackId={activeFeedbackId}
@@ -36,7 +36,7 @@ export function ResultsWorkspace({
       <WorkspaceColumns
         left={columns.left}
         right={columns.right}
-        columnsClassName="xl:grid-cols-[1.04fr_0.96fr]"
+        columnsClassName='xl:grid-cols-[1.04fr_0.96fr]'
       />
     </div>
   );
