@@ -56,7 +56,10 @@ app.post('/api/v1/analyses', upload.single('audio'), (req, res) => {
   const result = cloneResult(loadScenarioResult(scenario.resultFile));
   const transcriptOverride =
     typeof req.body?.transcript_override === 'string' ? req.body.transcript_override.trim() : '';
+  const promptLanguage =
+    typeof req.body?.prompt_language === 'string' ? req.body.prompt_language.trim() : '';
   applyTranscriptOverride(result, transcriptOverride || null);
+  applyPromptLanguage(result, promptLanguage || null);
 
   const analysisId = `demo-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   const requestId = crypto.randomUUID();
@@ -68,6 +71,7 @@ app.post('/api/v1/analyses', upload.single('audio'), (req, res) => {
     scenario: scenario.id,
     audioFilename: req.file?.originalname || scenario.audioFilename,
     transcriptOverride: transcriptOverride || null,
+    promptLanguage: promptLanguage || null,
     result,
   });
 
@@ -218,6 +222,7 @@ function buildJob(args: {
   scenario: string;
   audioFilename: string;
   transcriptOverride: string | null;
+  promptLanguage: string | null;
   result: Record<string, unknown>;
 }): AnalysisJob {
   const resultRecord = asRecord(args.result.result);
@@ -230,12 +235,14 @@ function buildJob(args: {
     audio_filename: args.audioFilename,
     audio_path: path.posix.join('/demo-audio', args.audioFilename),
     transcript_override: args.transcriptOverride,
+    prompt_language: args.promptLanguage,
     upload_wandb: false,
     result_path: `demo:${args.scenario}`,
     error: null,
     warnings: asStringArray(args.result.warnings),
     overall_score:
       typeof resultRecord?.overall_score === 'number' ? resultRecord.overall_score : null,
+    risk_score: typeof resultRecord?.risk_score === 'number' ? resultRecord.risk_score : null,
     level: typeof resultRecord?.level === 'string' ? resultRecord.level : null,
     summary: typeof resultRecord?.summary === 'string' ? resultRecord.summary : null,
     dominant_causes: asStringArray(resultRecord?.dominant_causes),
@@ -246,6 +253,22 @@ function buildJob(args: {
     result_url: `/api/v1/analyses/${args.analysisId}/result`,
     events_url: `/api/v1/analyses/${args.analysisId}/events`,
   };
+}
+
+function applyPromptLanguage(result: Record<string, unknown>, promptLanguage: string | null) {
+  if (!promptLanguage) {
+    return;
+  }
+  const normalized = promptLanguage.trim().toLowerCase();
+  if (normalized !== 'en' && normalized !== 'zh') {
+    return;
+  }
+  const meta =
+    result.meta && typeof result.meta === 'object' && !Array.isArray(result.meta)
+      ? (result.meta as Record<string, unknown>)
+      : {};
+  meta.prompt_language_override = normalized;
+  result.meta = meta;
 }
 
 function buildEvent(
