@@ -34,6 +34,7 @@ func (r *Runner) RunAnalysis(
 	scenario string,
 	outputPath string,
 	transcriptOverride *string,
+	promptLanguage *string,
 	configPath *string,
 	onProgress ProgressHandler,
 ) (*models.BridgeResultEnvelope, error) {
@@ -41,6 +42,9 @@ func (r *Runner) RunAnalysis(
 	args := []string{bridgePath, "analyze", "--audio", audioPath, "--scenario", scenario, "--output", outputPath}
 	if transcriptOverride != nil && strings.TrimSpace(*transcriptOverride) != "" {
 		args = append(args, "--transcript-override", *transcriptOverride)
+	}
+	if promptLanguage != nil && strings.TrimSpace(*promptLanguage) != "" {
+		args = append(args, "--prompt-language", *promptLanguage)
 	}
 	if configPath != nil && strings.TrimSpace(*configPath) != "" {
 		args = append(args, "--config", *configPath)

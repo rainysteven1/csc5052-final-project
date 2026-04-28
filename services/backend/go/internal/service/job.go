@@ -14,11 +14,34 @@ import (
 	"speaksure/backend/internal/models"
 )
 
-func (s *AnalysisService) CreateJob(filename string, audioBytes []byte, scenario string, transcriptOverride *string, uploadWandb bool) (models.AnalysisJob, error) {
-	return s.CreateJobWithContext(context.Background(), filename, audioBytes, scenario, transcriptOverride, uploadWandb)
+func (s *AnalysisService) CreateJob(
+	filename string,
+	audioBytes []byte,
+	scenario string,
+	transcriptOverride *string,
+	promptLanguage *string,
+	uploadWandb bool,
+) (models.AnalysisJob, error) {
+	return s.CreateJobWithContext(
+		context.Background(),
+		filename,
+		audioBytes,
+		scenario,
+		transcriptOverride,
+		promptLanguage,
+		uploadWandb,
+	)
 }
 
-func (s *AnalysisService) CreateJobWithContext(ctx context.Context, filename string, audioBytes []byte, scenario string, transcriptOverride *string, uploadWandb bool) (models.AnalysisJob, error) {
+func (s *AnalysisService) CreateJobWithContext(
+	ctx context.Context,
+	filename string,
+	audioBytes []byte,
+	scenario string,
+	transcriptOverride *string,
+	promptLanguage *string,
+	uploadWandb bool,
+) (models.AnalysisJob, error) {
 	analysisID := fmt.Sprintf("analysis_%d", time.Now().UTC().UnixNano())
 	safeName := filepath.Base(filename)
 	if safeName == "." || safeName == string(filepath.Separator) || safeName == "" {
@@ -40,6 +63,7 @@ func (s *AnalysisService) CreateJobWithContext(ctx context.Context, filename str
 		AudioFilename:      safeName,
 		AudioPath:          audioPath,
 		TranscriptOverride: transcriptOverride,
+		PromptLanguage:     promptLanguage,
 		UploadWandb:        uploadWandb,
 		Warnings:           []string{},
 		DominantCauses:     []string{},
@@ -55,6 +79,7 @@ func (s *AnalysisService) CreateJobWithContext(ctx context.Context, filename str
 	s.logJobWithContext(ctx, saved).WithFields(logrus.Fields{
 		"upload_wandb":        saved.UploadWandb,
 		"has_transcript_hint": saved.TranscriptOverride != nil && strings.TrimSpace(*saved.TranscriptOverride) != "",
+		"prompt_language":     optionalString(saved.PromptLanguage),
 	}).Info("analysis job created")
 	return saved, nil
 }
@@ -117,6 +142,7 @@ func (s *AnalysisService) runJob(ctx context.Context, analysisID string) {
 		job.Scenario,
 		outputPath,
 		job.TranscriptOverride,
+		job.PromptLanguage,
 		stringPtr(s.cfg.Backend.AgentConfigPath),
 		func(event models.AnalysisEvent) error {
 			if event.Node != nil {
@@ -212,6 +238,7 @@ func (s *AnalysisService) runJob(ctx context.Context, analysisID string) {
 		"warning_count":   len(savedJob.Warnings),
 		"dominant_causes": savedJob.DominantCauses,
 		"overall_score":   optionalFloat(savedJob.OverallScore),
+		"risk_score":      optionalFloat(savedJob.RiskScore),
 		"level":           optionalString(savedJob.Level),
 	})
 	if savedJob.Error != nil {
@@ -253,6 +280,9 @@ func applyStateSummary(job *models.AnalysisJob, state map[string]any) {
 	}
 	if value, ok := result["overall_score"].(float64); ok {
 		job.OverallScore = &value
+	}
+	if value, ok := result["risk_score"].(float64); ok {
+		job.RiskScore = &value
 	}
 	if value, ok := result["level"].(string); ok && value != "" {
 		job.Level = &value

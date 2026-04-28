@@ -9,11 +9,13 @@ type AnalysisJob struct {
 	AudioFilename      string   `json:"audio_filename"`
 	AudioPath          string   `json:"audio_path"`
 	TranscriptOverride *string  `json:"transcript_override,omitempty"`
+	PromptLanguage     *string  `json:"prompt_language,omitempty"`
 	UploadWandb        bool     `json:"upload_wandb"`
 	ResultPath         *string  `json:"result_path,omitempty"`
 	Error              *string  `json:"error,omitempty"`
 	Warnings           []string `json:"warnings"`
 	OverallScore       *float64 `json:"overall_score,omitempty"`
+	RiskScore          *float64 `json:"risk_score,omitempty"`
 	Level              *string  `json:"level,omitempty"`
 	Summary            *string  `json:"summary,omitempty"`
 	DominantCauses     []string `json:"dominant_causes"`

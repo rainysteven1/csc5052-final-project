@@ -42,6 +42,7 @@ func (api *API) submitAnalysis(c *gin.Context) {
 		scenario = "interview"
 	}
 	transcript := c.PostForm("transcript_override")
+	promptLanguage := c.PostForm("prompt_language")
 	uploadWandb := c.PostForm("upload_wandb") == "true"
 
 	src, err := file.Open()
@@ -62,7 +63,19 @@ func (api *API) submitAnalysis(c *gin.Context) {
 	if transcript != "" {
 		transcriptPtr = &transcript
 	}
-	job, err := api.svc.CreateJobWithContext(c.Request.Context(), file.Filename, data, scenario, transcriptPtr, uploadWandb)
+	var promptLanguagePtr *string
+	if promptLanguage != "" {
+		promptLanguagePtr = &promptLanguage
+	}
+	job, err := api.svc.CreateJobWithContext(
+		c.Request.Context(),
+		file.Filename,
+		data,
+		scenario,
+		transcriptPtr,
+		promptLanguagePtr,
+		uploadWandb,
+	)
 	if err != nil {
 		api.writeError(c, http.StatusInternalServerError, codeAnalysisCreateFailed, err.Error(), err)
 		return
