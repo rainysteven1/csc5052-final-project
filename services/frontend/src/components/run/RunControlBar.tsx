@@ -3,7 +3,9 @@ import { ControlStatCard } from '@/components/shared/ControlStatCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { WorkspaceControlBar } from '@/components/shared/WorkspaceControlBar';
 import { isFakeDeployment } from '@/lib/runtime-config';
+import { getExplanationLanguageShortLabel } from '@/lib/theme';
 import { useAnalysisStore } from '@/store/analysis-store';
+import { useThemeStore } from '@/store/theme-store';
 
 function deriveSourceLabel(
   mode: 'live' | 'replay',
@@ -33,6 +35,9 @@ export function RunControlBar() {
   const replayPath = useAnalysisStore((state) => state.replayPath);
   const job = useAnalysisStore((state) => state.job);
   const switchMode = useAnalysisStore((state) => state.switchMode);
+  const explanationLanguage = useThemeStore(
+    (state) => state.explanationLanguage
+  );
 
   const sourceLabel = deriveSourceLabel(
     mode,
@@ -45,11 +50,20 @@ export function RunControlBar() {
   return (
     <WorkspaceControlBar
       tabs={<RunModeTabs active={mode} onChange={switchMode} />}
-      statsClassName='sm:grid-cols-3'
+      statsClassName='sm:grid-cols-4'
       stats={
         <>
           <ControlStatCard label='Scenario' value={scenario} />
           <ControlStatCard label='Source' value={sourceLabel} />
+          <ControlStatCard
+            label='Output'
+            value={getExplanationLanguageShortLabel(explanationLanguage)}
+            meta={
+              explanationLanguage === 'en'
+                ? 'English explanations'
+                : 'Chinese explanations'
+            }
+          />
           <ControlStatCard
             label='Status'
             value={

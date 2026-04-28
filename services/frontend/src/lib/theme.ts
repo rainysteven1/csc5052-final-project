@@ -7,6 +7,7 @@ export type ThemePresetId =
   | 'ivory';
 
 export type ThemeSurfaceMode = 'soft' | 'balanced' | 'crisp';
+export type ExplanationLanguage = 'zh' | 'en';
 
 export type ThemePreset = {
   id: ThemePresetId;
@@ -18,6 +19,7 @@ export type ThemePreset = {
 export type ThemeSettings = {
   presetId: ThemePresetId;
   surfaceMode: ThemeSurfaceMode;
+  explanationLanguage: ExplanationLanguage;
 };
 
 export const themeStorageKey = 'speaksure-theme-settings';
@@ -83,9 +85,30 @@ export const surfaceModeOptions: Array<{
   },
 ];
 
+export const explanationLanguageOptions: Array<{
+  id: ExplanationLanguage;
+  label: string;
+  shortLabel: string;
+  description: string;
+}> = [
+  {
+    id: 'zh',
+    label: 'Chinese',
+    shortLabel: 'ZH',
+    description: 'Return coaching and analysis explanations in Chinese.',
+  },
+  {
+    id: 'en',
+    label: 'English',
+    shortLabel: 'EN',
+    description: 'Return coaching and analysis explanations in English.',
+  },
+];
+
 export const defaultThemeSettings: ThemeSettings = {
   presetId: 'sandstone',
   surfaceMode: 'balanced',
+  explanationLanguage: 'zh',
 };
 
 export function getThemePreset(presetId: ThemePresetId) {
@@ -102,6 +125,30 @@ export function isThemeSurfaceMode(value: string): value is ThemeSurfaceMode {
   return surfaceModeOptions.some((option) => option.id === value);
 }
 
+export function isExplanationLanguage(
+  value: string
+): value is ExplanationLanguage {
+  return value === 'zh' || value === 'en';
+}
+
+export function getExplanationLanguageLabel(
+  value: ExplanationLanguage | null | undefined
+) {
+  return (
+    explanationLanguageOptions.find((option) => option.id === value)?.label ||
+    'Auto'
+  );
+}
+
+export function getExplanationLanguageShortLabel(
+  value: ExplanationLanguage | null | undefined
+) {
+  return (
+    explanationLanguageOptions.find((option) => option.id === value)
+      ?.shortLabel || 'AUTO'
+  );
+}
+
 export function readThemeSettings(): ThemeSettings {
   if (typeof window === 'undefined') {
     return defaultThemeSettings;
@@ -116,6 +163,7 @@ export function readThemeSettings(): ThemeSettings {
     const parsed = JSON.parse(raw) as Partial<ThemeSettings>;
     const presetId = parsed.presetId;
     const surfaceMode = parsed.surfaceMode;
+    const explanationLanguage = parsed.explanationLanguage;
 
     return {
       presetId:
@@ -126,6 +174,10 @@ export function readThemeSettings(): ThemeSettings {
         surfaceMode && isThemeSurfaceMode(surfaceMode)
           ? surfaceMode
           : defaultThemeSettings.surfaceMode,
+      explanationLanguage:
+        explanationLanguage && isExplanationLanguage(explanationLanguage)
+          ? explanationLanguage
+          : defaultThemeSettings.explanationLanguage,
     };
   } catch {
     return defaultThemeSettings;

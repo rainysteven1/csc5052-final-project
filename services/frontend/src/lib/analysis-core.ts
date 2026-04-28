@@ -97,6 +97,28 @@ export function formatNumber(value: unknown, digits = 3) {
   return typeof value === 'number' ? value.toFixed(digits) : '--';
 }
 
+const performanceLevelLabels: Record<string, string> = {
+  excellent: 'Excellent',
+  good: 'Good',
+  developing: 'Developing',
+  needs_work: 'Needs work',
+};
+
+export function formatPerformanceLevel(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return '--';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return (
+    performanceLevelLabels[normalized] ||
+    normalized
+      .split(/[_\s]+/)
+      .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : part))
+      .join(' ')
+  );
+}
+
 export function formatSeconds(value: unknown) {
   return typeof value === 'number' ? `${value.toFixed(2)}s` : 'n/a';
 }

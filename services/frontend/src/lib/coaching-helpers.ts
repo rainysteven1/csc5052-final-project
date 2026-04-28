@@ -61,6 +61,12 @@ export function buildResultSummary(
         : typeof job?.overall_score === 'number'
           ? job.overall_score
           : null,
+    riskScore:
+      typeof resultPayload.risk_score === 'number'
+        ? resultPayload.risk_score
+        : typeof job?.risk_score === 'number'
+          ? job.risk_score
+          : null,
     level:
       typeof resultPayload.level === 'string'
         ? resultPayload.level

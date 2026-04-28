@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import {
   applyThemeSettings,
   defaultThemeSettings,
+  type ExplanationLanguage,
   persistThemeSettings,
   readThemeSettings,
   type ThemePresetId,
@@ -18,6 +19,7 @@ applyThemeSettings(initialThemeSettings);
 type ThemeStore = ThemeSettings & {
   setPresetId: (presetId: ThemePresetId) => void;
   setSurfaceMode: (surfaceMode: ThemeSurfaceMode) => void;
+  setExplanationLanguage: (explanationLanguage: ExplanationLanguage) => void;
 };
 
 function commitThemeSettings(settings: ThemeSettings) {
@@ -32,6 +34,7 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     const nextSettings = {
       presetId,
       surfaceMode: get().surfaceMode,
+      explanationLanguage: get().explanationLanguage,
     };
     commitThemeSettings(nextSettings);
     set(nextSettings);
@@ -41,6 +44,17 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     const nextSettings = {
       presetId: get().presetId,
       surfaceMode,
+      explanationLanguage: get().explanationLanguage,
+    };
+    commitThemeSettings(nextSettings);
+    set(nextSettings);
+  },
+
+  setExplanationLanguage: (explanationLanguage) => {
+    const nextSettings = {
+      presetId: get().presetId,
+      surfaceMode: get().surfaceMode,
+      explanationLanguage,
     };
     commitThemeSettings(nextSettings);
     set(nextSettings);

@@ -17,10 +17,10 @@ export function SegmentResultCard({
   onSelect,
 }: SegmentResultCardProps) {
   const scoreRows = [
-    ['Lexical', segment.scores?.lexical],
-    ['Prosody', segment.scores?.prosody],
-    ['Disfluency', segment.scores?.disfluency],
-    ['Final', segment.scores?.final],
+    ['Lexical risk', segment.scores?.lexical],
+    ['Prosody risk', segment.scores?.prosody],
+    ['Disfluency risk', segment.scores?.disfluency],
+    ['Combined risk', segment.scores?.final],
   ] as const;
   const weakestScore = scoreRows.reduce<(typeof scoreRows)[number] | null>(
     (lowest, current) => {
@@ -48,7 +48,7 @@ export function SegmentResultCard({
               {segment.segment_id}
             </div>
             <SectionEyebrow>
-              final {segment.scores?.final?.toFixed(3) || '--'}
+              combined risk {segment.scores?.final?.toFixed(3) || '--'}
             </SectionEyebrow>
           </div>
           <div className='mt-1 text-xs text-muted-foreground'>

@@ -4,7 +4,11 @@ import {
   StatCardGrid,
   type StatCardItem,
 } from '@/components/shared/StatCardGrid';
-import { asStringArray, buildResultSummary } from '@/lib/analysis-helpers';
+import {
+  asStringArray,
+  buildResultSummary,
+  formatPerformanceLevel,
+} from '@/lib/analysis-helpers';
 import { useAnalysisStore } from '@/store/analysis-store';
 
 type ResultsLensPanelProps = {
@@ -71,7 +75,14 @@ function buildCardsByView(
           summary.overallScore != null
             ? summary.overallScore.toFixed(2)
             : 'n/a',
-        meta: summary.level || 'level pending',
+        meta: formatPerformanceLevel(summary.level),
+      },
+      {
+        label: 'Risk score',
+        value: summary.riskScore != null ? summary.riskScore.toFixed(2) : 'n/a',
+        meta: summary.level
+          ? `${formatPerformanceLevel(summary.level)} band`
+          : 'level pending',
       },
       {
         label: 'Dominant causes',
@@ -122,7 +133,7 @@ function buildCardsByView(
           : 'no active segment',
       },
       {
-        label: 'Final score',
+        label: 'Combined risk',
         value:
           typeof activeSegment?.scores?.final === 'number'
             ? activeSegment.scores.final.toFixed(3)

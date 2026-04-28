@@ -1,5 +1,6 @@
 import { MetricBar } from '@/components/pipeline/MetricBar';
 import { PipelineSectionBlock } from '@/components/pipeline/PipelineSectionBlock';
+import { PerformanceLevelBadge } from '@/components/shared/PerformanceLevelBadge';
 import { asRecord } from '@/lib/analysis-helpers';
 import type { AnalysisStateResult } from '@/types/analysis';
 
@@ -42,8 +43,14 @@ export function FinalizeSpotlight({
             value={resultPayload.overall_score}
             tone='from-indigo-400 to-slate-300'
           />
-          <div className='text-sm text-muted-foreground'>
-            Level: {String(resultPayload.level || '--')}
+          <MetricBar
+            label='risk score'
+            value={resultPayload.risk_score}
+            tone='from-amber-300 to-rose-400'
+          />
+          <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+            <span>Level:</span>
+            <PerformanceLevelBadge level={String(resultPayload.level || '')} />
           </div>
         </div>
       </PipelineSectionBlock>

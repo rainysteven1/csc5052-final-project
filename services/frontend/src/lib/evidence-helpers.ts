@@ -3,6 +3,7 @@ import {
   asStringArray,
   average,
   formatNumber,
+  formatPerformanceLevel,
   normalizeAnalysisState,
   prettifyNode,
   sanitizeDisplayText,
@@ -98,7 +99,7 @@ export function buildNodeVisuals(
       node: 'finalize',
       eyebrow: 'export status',
       title: String(resultPayload.status || normalizedResult.status || '--'),
-      metric: formatNumber(resultPayload.overall_score, 3),
+      metric: `Overall score ${formatNumber(resultPayload.overall_score, 3)} · Risk ${formatNumber(resultPayload.risk_score, 3)}`,
       detail: '',
       accent: nodeAccentClasses.finalize,
     },
@@ -274,7 +275,14 @@ export function buildNodeDetails(
           label: 'Overall score',
           value: formatNumber(resultPayload.overall_score, 3),
         },
-        { label: 'Level', value: String(resultPayload.level || '--') },
+        {
+          label: 'Risk score',
+          value: formatNumber(resultPayload.risk_score, 3),
+        },
+        {
+          label: 'Level',
+          value: formatPerformanceLevel(resultPayload.level),
+        },
         {
           label: 'Dominant causes',
           value: String(asStringArray(resultPayload.dominant_causes).length),
@@ -305,6 +313,14 @@ export function buildNodeDetails(
     summary: 'Final JSON export is ready for downstream UI, storage or replay.',
     stats: [
       { label: 'Status', value: String(resultPayload.status || currentStatus) },
+      {
+        label: 'Overall score',
+        value: formatNumber(resultPayload.overall_score, 3),
+      },
+      {
+        label: 'Risk score',
+        value: formatNumber(resultPayload.risk_score, 3),
+      },
       {
         label: 'Warnings',
         value: String(

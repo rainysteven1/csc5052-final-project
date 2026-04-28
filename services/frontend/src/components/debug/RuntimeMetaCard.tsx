@@ -5,6 +5,7 @@ import {
   buildResultSummary,
   getWorkflowNodes,
 } from '@/lib/analysis-helpers';
+import { getExplanationLanguageLabel } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { useAnalysisStore } from '@/store/analysis-store';
 
@@ -33,6 +34,28 @@ export function RuntimeMetaCard({ className }: RuntimeMetaCardProps) {
         <MetaTile
           label='Workflow engine'
           value={String(meta.workflow_engine || 'n/a')}
+        />
+        <MetaTile
+          label='Overall score'
+          value={
+            summary.overallScore != null
+              ? summary.overallScore.toFixed(3)
+              : 'n/a'
+          }
+        />
+        <MetaTile
+          label='Risk score'
+          value={
+            summary.riskScore != null ? summary.riskScore.toFixed(3) : 'n/a'
+          }
+        />
+        <MetaTile
+          label='Prompt language'
+          value={getExplanationLanguageLabel(
+            typeof meta.prompt_language_override === 'string'
+              ? (meta.prompt_language_override as 'zh' | 'en')
+              : null
+          )}
         />
         <MetaTile label='Language' value={String(meta.language || 'n/a')} />
         <MetaTile label='ASR mode' value={String(meta.asr_mode || 'n/a')} />

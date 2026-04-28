@@ -25,9 +25,9 @@ export function EvidenceOverviewGrid({
   riskSegments,
 }: EvidenceOverviewGridProps) {
   const prosodyRows = [
-    ['Avg lexical', averageScore(lexical)],
-    ['Avg prosody', averageScore(prosody)],
-    ['Avg disfluency', averageScore(disfluency)],
+    ['Avg lexical risk', averageScore(lexical)],
+    ['Avg prosody risk', averageScore(prosody)],
+    ['Avg disfluency risk', averageScore(disfluency)],
   ] as const;
 
   return (

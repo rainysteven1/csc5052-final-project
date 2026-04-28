@@ -14,11 +14,13 @@ export type AnalysisJob = {
   audio_filename: string;
   audio_path: string;
   transcript_override?: string | null;
+  prompt_language?: string | null;
   upload_wandb: boolean;
   result_path?: string | null;
   error?: string | null;
   warnings: string[];
   overall_score?: number | null;
+  risk_score?: number | null;
   level?: string | null;
   summary?: string | null;
   dominant_causes: string[];
@@ -107,6 +109,7 @@ export type NodeDetail = {
 
 export type ResultSummary = {
   overallScore: number | null;
+  riskScore: number | null;
   level: string | null;
   summary: string;
   dominantCauses: string[];

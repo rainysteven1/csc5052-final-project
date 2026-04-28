@@ -5,7 +5,14 @@ import { Check, Paintbrush, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getThemePreset, surfaceModeOptions, themePresets } from '@/lib/theme';
+import {
+  explanationLanguageOptions,
+  getExplanationLanguageLabel,
+  getExplanationLanguageShortLabel,
+  getThemePreset,
+  surfaceModeOptions,
+  themePresets,
+} from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/store/theme-store';
 
@@ -20,8 +27,14 @@ export function ThemeSettingsDrawer({
 }: ThemeSettingsDrawerProps) {
   const presetId = useThemeStore((state) => state.presetId);
   const surfaceMode = useThemeStore((state) => state.surfaceMode);
+  const explanationLanguage = useThemeStore(
+    (state) => state.explanationLanguage
+  );
   const setPresetId = useThemeStore((state) => state.setPresetId);
   const setSurfaceMode = useThemeStore((state) => state.setSurfaceMode);
+  const setExplanationLanguage = useThemeStore(
+    (state) => state.setExplanationLanguage
+  );
   const activePreset = getThemePreset(presetId);
 
   useEffect(() => {
@@ -68,7 +81,8 @@ export function ThemeSettingsDrawer({
                 Tune the workspace
               </div>
               <div className='mt-2 text-sm leading-6 text-muted-foreground'>
-                Switch preset and surface contrast.
+                Switch preset, surface contrast, and returned explanation
+                language.
               </div>
             </div>
             <Button
@@ -92,7 +106,12 @@ export function ThemeSettingsDrawer({
                   {activePreset.label}
                 </div>
               </div>
-              <Badge variant='accent'>{surfaceMode}</Badge>
+              <div className='flex flex-wrap items-center justify-end gap-2'>
+                <Badge variant='accent'>{surfaceMode}</Badge>
+                <Badge variant='outline'>
+                  {getExplanationLanguageShortLabel(explanationLanguage)} output
+                </Badge>
+              </div>
             </div>
             <div className='mt-3 text-sm leading-6 text-muted-foreground'>
               {activePreset.description}
@@ -152,6 +171,47 @@ export function ThemeSettingsDrawer({
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section className='space-y-3'>
+            <div className='ui-label-sm text-muted-foreground'>
+              Output language
+            </div>
+            <div className='grid gap-3 sm:grid-cols-2'>
+              {explanationLanguageOptions.map((option) => {
+                const active = option.id === explanationLanguage;
+                return (
+                  <button
+                    key={option.id}
+                    type='button'
+                    onClick={() => setExplanationLanguage(option.id)}
+                    className={cn(
+                      'rounded-[20px] border px-4 py-3 text-left transition-all',
+                      active
+                        ? 'border-primary bg-primary/8 ring-2 ring-primary/15'
+                        : 'border-border/70 bg-card hover:bg-secondary/24'
+                    )}
+                  >
+                    <div className='flex items-center justify-between gap-3'>
+                      <div className='font-medium text-foreground'>
+                        {option.label}
+                      </div>
+                      {active ? (
+                        <Badge variant='outline'>
+                          {getExplanationLanguageShortLabel(option.id)}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className='mt-2 text-sm leading-6 text-muted-foreground'>
+                      {option.description}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className='text-xs text-muted-foreground'>
+              Current output: {getExplanationLanguageLabel(explanationLanguage)}
             </div>
           </section>
 

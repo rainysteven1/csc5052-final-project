@@ -126,6 +126,10 @@ export function buildReplayEvents(
     typeof resultPayload.overall_score === 'number'
       ? resultPayload.overall_score
       : null;
+  const riskScore =
+    typeof resultPayload.risk_score === 'number'
+      ? resultPayload.risk_score
+      : null;
   const level =
     typeof resultPayload.level === 'string' ? resultPayload.level : null;
   const summary =
@@ -143,6 +147,7 @@ export function buildReplayEvents(
     result_path: replayPath,
     warnings: normalizedResult.warnings,
     overall_score: overallScore,
+    risk_score: riskScore,
     level,
     summary,
     dominant_causes: dominantCauses,

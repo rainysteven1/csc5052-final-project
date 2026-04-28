@@ -5,7 +5,7 @@ import { SurfaceSection } from '@/components/shared/SurfaceSection';
 
 type ResultMetricCardProps = {
   label: string;
-  value: string;
+  value: ReactNode;
   icon: ReactNode;
 };
 

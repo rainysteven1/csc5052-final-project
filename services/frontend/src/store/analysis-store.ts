@@ -9,6 +9,7 @@ import {
 import { makeRuntimeIssue, parseApiError } from '@/lib/api';
 import { buildApiUrl } from '@/lib/api-base';
 import { isFakeDeployment } from '@/lib/runtime-config';
+import { useThemeStore } from '@/store/theme-store';
 import {
   type AnalysisEvent,
   type AnalysisJob,
@@ -322,6 +323,7 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
 
   submitLiveRun: async () => {
     const { audioFile, scenario, transcriptOverride } = get();
+    const explanationLanguage = useThemeStore.getState().explanationLanguage;
     if (!audioFile && !isFakeDeployment) {
       set({
         error: makeRuntimeIssue(
@@ -356,6 +358,7 @@ export const useAnalysisStore = create<AnalysisStore>((set, get) => ({
     if (!isFakeDeployment && transcriptOverride.trim()) {
       formData.append('transcript_override', transcriptOverride.trim());
     }
+    formData.append('prompt_language', explanationLanguage);
 
     try {
       const response = await fetch(buildApiUrl('/api/v1/analyses'), {

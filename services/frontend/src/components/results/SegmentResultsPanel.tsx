@@ -50,14 +50,14 @@ export function SegmentResultsPanel({
       contentClassName='space-y-4'
     >
       {summary.segmentResults.length === 0 ? (
-        <EmptyState title='No segment scores' />
+        <EmptyState title='No segment analysis' />
       ) : (
         <div className='space-y-3'>
           <div className='console-index-header sticky top-0 z-10 backdrop-blur'>
             <div className='grid gap-4 xl:grid-cols-[1fr_0.8fr_1.2fr] xl:items-center'>
               <PanelHeaderCell label='Segment' />
               <PanelHeaderCell label='Weakest / evidence' />
-              <PanelHeaderCell label='Scores' align='right' />
+              <PanelHeaderCell label='Signal / risk' align='right' />
             </div>
           </div>
 
