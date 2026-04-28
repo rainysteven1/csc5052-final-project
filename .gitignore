@@ -23,6 +23,8 @@ trainer/.*.toml
 assets/
 checkpoints/
 data/
+!services/fake-backend/data/
+!services/fake-backend/data/**
 !experiments/
 experiments/*
 !experiments/metadata/

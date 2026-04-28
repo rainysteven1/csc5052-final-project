@@ -4,6 +4,8 @@ set dotenv-filename := ".env"
 default:
     @just --list
 
+root := justfile_directory()
+
 init-env:
     @if [ -f .env ]; then \
         echo ".env already exists; leave it unchanged."; \
@@ -15,34 +17,75 @@ init-env:
 doctor:
     python -m services.agent.src.app.doctor
 
-doctor-live interval="2":
-    python -m services.agent.src.app.doctor --watch --interval {{ interval }}
-
-sync-dev:
-    cd services/agent && UV_CACHE_DIR=../../.cache/uvtmp uv sync --group runtime --group dev --group proto
-
-doctor-local:
-    SPEAKSURE_ASR_PROVIDER=local python -m services.agent.src.app.doctor
-
 proto-gen:
     ./services/agent/scripts/generate_proto.sh
 
 run-agent-grpc asr_mode="local":
     SPEAKSURE_ASR_PROVIDER={{ asr_mode }} python services/agent/main.py
 
-
-
 run-backend:
     cd services/backend/go && SPEAKSURE_ASR_PROVIDER=local go run ./cmd/server
 
+backend-lint:
+    @if command -v devbox >/dev/null 2>&1; then \
+        devbox run -- bash -lc 'cd services/backend/go && golangci-lint run --config=../.golangci.yaml ./...'; \
+    else \
+        cd services/backend/go && golangci-lint run --config=../.golangci.yaml ./...; \
+    fi
+
+backend-check:
+    ./scripts/check_backend.sh
+
+run-fake-backend:
+    cd services/fake-backend && corepack pnpm dev
+
 run-frontend:
-    cd services/frontend && npm run dev
+    cd services/frontend && corepack pnpm dev
 
-analyze *args:
-    python services/agent/cli.py analyze {{ args }}
+run-fake-frontend:
+    cd services/frontend && corepack pnpm dev:fake
 
-analyze-samples *args:
-    python services/agent/cli.py analyze-samples {{ args }}
+frontend-build:
+    cd services/frontend && corepack pnpm build
+
+frontend-lint-fix:
+    cd services/frontend && corepack pnpm lint:fix
+
+frontend-format-check:
+    cd services/frontend && corepack pnpm format
+
+fake-backend-build:
+    cd services/fake-backend && corepack pnpm build
+
+fake-backend-lint-fix:
+    cd services/fake-backend && corepack pnpm lint:fix
+
+fake-backend-format-check:
+    cd services/fake-backend && corepack pnpm format:check
+
+changelog:
+    @if command -v devbox >/dev/null 2>&1; then \
+        devbox run -- git-cliff -o CHANGELOG.md; \
+    else \
+        git-cliff -o CHANGELOG.md; \
+    fi
+
+download-models *args:
+    python scripts/command/main.py download-models {{ args }}
+
+release-commit-preview:
+    python scripts/command/main.py release-commit --preview
+
+release-commit:
+    python scripts/command/main.py release-commit
+
+release version:
+    just changelog
+    git add {{ root }}/CHANGELOG.md
+    git commit -m "chore(release): version {{ version }}" --no-verify
+    git push -u origin main
+    git tag -a "v{{ version }}" -m "Release version {{ version }}"
+    git push origin "v{{ version }}"
 
 lint:
     cd services/agent && UV_CACHE_DIR=../../.cache/uvtmp uv run ruff check cli.py main.py backend_bridge.py bootstrap.py src tests

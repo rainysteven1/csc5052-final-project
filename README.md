@@ -32,17 +32,17 @@ If you want to inspect current runtime readiness:
 just doctor
 ```
 
+Local tooling note:
+
+- `git-cliff` and `golangci-lint` are provided by `devbox.json`
+- repo commands prefer `devbox` and only fall back to global binaries when needed
+
 ## Local Run
 
-Backend:
+Normal backend + frontend:
 
 ```bash
 just run-backend
-```
-
-Frontend:
-
-```bash
 just run-frontend
 ```
 
@@ -52,6 +52,18 @@ Default local addresses:
 - backend: `http://127.0.0.1:8000`
 
 The frontend proxies `/api/*` to the backend through Vite.
+
+Frontend mode is controlled by service-local env files:
+
+- `services/frontend/.env` for the normal Go backend
+- `services/frontend/.env.fake` for the fake showcase backend
+
+In normal frontend mode, the Run page shows:
+
+- audio upload
+- scenario selector
+- transcript override
+- manual replay path input
 
 Local storage ownership:
 
@@ -88,11 +100,46 @@ A replay JSON can be loaded directly from:
 
 This is useful for coursework demos because it avoids needing a fresh live run every time.
 
+## Public Demo Path
+
+If you want a shareable demo without deploying the real model stack:
+
+```bash
+just run-fake-backend
+just run-fake-frontend
+```
+
+This uses the file-driven Node demo API in `services/fake-backend`, including SSE event streaming for the live pipeline view.
+
+In fake frontend mode, the Run page:
+
+- hides audio upload
+- hides scenario selection
+- hides transcript override
+- hides manual replay path input
+- shows the showcase gallery in a single vertical column
+- supports one-click `Open replay` and `Launch live`
+
+For a public demo deployment, the recommended low-cost split is:
+
+- `services/frontend` on Vercel
+- `services/fake-backend` on Render
+
+The repo already includes:
+
+- `services/frontend/vercel.json` for Vercel SPA routing
+- `.github/workflows/vercel-deploy.yml` for frontend deploys to Vercel
+- `.github/workflows/render-fake-backend-deploy.yml` for fake-backend deploy triggers to Render
+
+GitHub Deployments will show the frontend and fake-backend as separate environments.
+
 ## Key Docs
 
 - backend/service details: `services/backend/README.md`
 - agent analysis core: `services/agent/README.md`
 - frontend workspace details: `services/frontend/README.md`
+- fake demo deployment: `docs/FAKE_DEMO_DEPLOYMENT.md`
+- fake backend hosting: `docs/FAKE_BACKEND_HOSTING_GUIDE.md`
 - demo and submission guide: `docs/DEMO_AND_SUBMISSION_GUIDE.md`
 - model selection notes: `docs/SpeakSure++_HuggingFace预训练模型选型与下载清单.md`
 

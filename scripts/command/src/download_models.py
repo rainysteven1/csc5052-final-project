@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import fnmatch
 import os
 from dataclasses import dataclass
@@ -185,7 +184,13 @@ FALLBACK_CONFIG: dict[str, Any] = {
                 "default": "1",
                 "options": [
                     {"value": "0", "label": "Skip"},
-                    {"value": "1", "label": "Whisper ONNX", "description": "recommended", "recommended": True, "model_codes": ["1"]},
+                    {
+                        "value": "1",
+                        "label": "Whisper ONNX",
+                        "description": "recommended",
+                        "recommended": True,
+                        "model_codes": ["1"],
+                    },
                 ],
             },
             {
@@ -196,8 +201,19 @@ FALLBACK_CONFIG: dict[str, Any] = {
                 "default": "1",
                 "options": [
                     {"value": "0", "label": "Skip"},
-                    {"value": "1", "label": "ONNX version", "description": "recommended", "recommended": True, "model_codes": ["2"]},
-                    {"value": "2", "label": "Original pyannote", "description": "requires HF_TOKEN", "model_codes": ["3"]},
+                    {
+                        "value": "1",
+                        "label": "ONNX version",
+                        "description": "recommended",
+                        "recommended": True,
+                        "model_codes": ["2"],
+                    },
+                    {
+                        "value": "2",
+                        "label": "Original pyannote",
+                        "description": "requires HF_TOKEN",
+                        "model_codes": ["3"],
+                    },
                 ],
             },
             {
@@ -216,7 +232,13 @@ FALLBACK_CONFIG: dict[str, Any] = {
                 "default": "1",
                 "options": [
                     {"value": "0", "label": "Skip"},
-                    {"value": "1", "label": "FireRedPunc", "description": "recommended for ZH/EN", "recommended": True, "model_codes": ["5"]},
+                    {
+                        "value": "1",
+                        "label": "FireRedPunc",
+                        "description": "recommended for ZH/EN",
+                        "recommended": True,
+                        "model_codes": ["5"],
+                    },
                     {"value": "2", "label": "bert-restore-punctuation", "description": "English", "model_codes": ["6"]},
                     {"value": "3", "label": "Download both", "model_codes": ["5", "6"]},
                 ],
@@ -364,7 +386,9 @@ def _validate_references(parsed: DownloadConfig) -> None:
                 missing = [code for code in option.model_codes if code not in model_codes]
                 if missing:
                     raise SystemExit(
-                        f"Wizard step `{step.key}` option `{option.value}` references unknown model codes: {', '.join(missing)}"
+                        "Wizard step "
+                        f"`{step.key}` option `{option.value}` references "
+                        f"unknown model codes: {', '.join(missing)}"
                     )
         else:
             missing = [code for code in step.model_codes if code not in model_codes]
@@ -545,7 +569,12 @@ def _dedupe(codes: list[str]) -> list[str]:
     return ordered
 
 
-def _resolve_models(runtime: RuntimeState, codes: list[str], *, include_existing: bool) -> list[tuple[str, ModelConfig]]:
+def _resolve_models(
+    runtime: RuntimeState,
+    codes: list[str],
+    *,
+    include_existing: bool,
+) -> list[tuple[str, ModelConfig]]:
     models = [(code, runtime.models[code]) for code in _dedupe(codes) if code in runtime.models]
     if include_existing:
         return models
@@ -601,7 +630,10 @@ def _configure_download_defaults(defaults: DownloadDefaults) -> tuple[int, int, 
     return download_timeout, etag_timeout, max_workers
 
 
-def _pick_non_onnx_weight_patterns(repo_files: set[str], weight_priority: tuple[tuple[str, ...], ...]) -> tuple[str, ...]:
+def _pick_non_onnx_weight_patterns(
+    repo_files: set[str],
+    weight_priority: tuple[tuple[str, ...], ...],
+) -> tuple[str, ...]:
     for candidate in weight_priority:
         matched_all = True
         for item in candidate:
@@ -720,7 +752,7 @@ def _download_one(
                 max_workers=max_workers,
                 resume_download=True,
             )
-    except (httpx.TimeoutException, TimeoutError) as exc:
+    except (httpx.TimeoutException, TimeoutError):
         detail = (
             "Timeout. Re-run the same command to resume, or increase "
             "HF_HUB_DOWNLOAD_TIMEOUT / HF_HUB_ETAG_TIMEOUT, or lower HF_DOWNLOAD_MAX_WORKERS."
@@ -804,38 +836,45 @@ def _list_available(runtime: RuntimeState) -> None:
     console.print(f"\nPresets: {', '.join(sorted(runtime.presets))}")
 
 
-def main() -> int:
+def run_download_models(
+    *,
+    list_available: bool,
+    preset: str | None,
+    include_existing: bool,
+    yes: bool,
+) -> int:
     runtime = _load_runtime_state()
 
-    parser = argparse.ArgumentParser(description="Download SpeakSure++ models via uv + rich wizard.")
-    parser.add_argument("--list", action="store_true", help="Show current model status and available options.")
-    parser.add_argument("--preset", choices=sorted(runtime.presets), help="Skip the wizard and use a preset selection.")
-    parser.add_argument("--include-existing", action="store_true", help="Download even if the target directory already looks ready.")
-    parser.add_argument("--yes", action="store_true", help="Skip the final confirmation prompt.")
-    args = parser.parse_args()
+    if preset and preset not in runtime.presets:
+        choices = ", ".join(sorted(runtime.presets))
+        raise ValueError(f"Unknown preset `{preset}`. Available presets: {choices}")
 
-    if args.list:
+    if list_available:
         _list_available(runtime)
         return 0
 
     _render_existing_models(runtime)
-    selected_codes = list(runtime.presets[args.preset].model_codes) if args.preset else _pick_preset(runtime)
+    selected_codes = list(runtime.presets[preset].model_codes) if preset else _pick_preset(runtime)
     if not selected_codes:
         console.print("[yellow]No models selected. Exiting.[/yellow]")
         return 0
 
     all_models = [(code, runtime.models[code]) for code in _dedupe(selected_codes) if code in runtime.models]
-    include_existing = args.include_existing
-    if args.include_existing:
+    resolved_include_existing = include_existing
+    if include_existing:
         skip_existing = False
-    elif args.yes:
+    elif yes:
         skip_existing = True
-        include_existing = False
+        resolved_include_existing = False
     else:
         skip_existing = _ask_skip_existing()
-        include_existing = not skip_existing
+        resolved_include_existing = not skip_existing
 
-    models = _resolve_models(runtime, selected_codes, include_existing=include_existing)
+    models = _resolve_models(
+        runtime,
+        selected_codes,
+        include_existing=resolved_include_existing,
+    )
     _render_selection_summary(all_models, models, skip_existing=skip_existing)
     if not models:
         console.print("[green]Everything you selected already looks ready. Nothing to download.[/green]")
@@ -845,11 +884,17 @@ def main() -> int:
     _load_project_dotenv()
     endpoint = _configure_hf_endpoint(runtime.defaults.hf_endpoint)
     _, etag_timeout, max_workers = _configure_download_defaults(runtime.defaults)
-    if not args.yes and not Confirm.ask("Start download now?", default=True):
+    if not yes and not Confirm.ask("Start download now?", default=True):
         console.print("[yellow]Cancelled.[/yellow]")
         return 0
 
-    outcomes = _download_all(models, defaults=runtime.defaults, endpoint=endpoint, etag_timeout=etag_timeout, max_workers=max_workers)
+    outcomes = _download_all(
+        models,
+        defaults=runtime.defaults,
+        endpoint=endpoint,
+        etag_timeout=etag_timeout,
+        max_workers=max_workers,
+    )
     _render_download_summary(outcomes)
     if any(not outcome.ok for outcome in outcomes):
         console.print("\n[bold yellow]Completed with some errors.[/bold yellow]")
