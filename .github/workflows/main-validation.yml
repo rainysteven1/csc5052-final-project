@@ -1,0 +1,232 @@
+name: Main Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/backend/.golangci.yaml"
+      - ".github/workflows/main-validation.yml"
+      - "scripts/check_*.sh"
+      - "services/agent/**"
+      - "services/backend/go/**"
+      - "services/fake-backend/**"
+      - "services/frontend/**"
+      - "services/proto/**"
+  push:
+    branches: [main]
+    paths:
+      - "services/backend/.golangci.yaml"
+      - ".github/workflows/main-validation.yml"
+      - "scripts/check_*.sh"
+      - "services/agent/**"
+      - "services/backend/go/**"
+      - "services/fake-backend/**"
+      - "services/frontend/**"
+      - "services/proto/**"
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      agent: ${{ steps.filter.outputs.agent }}
+      backend: ${{ steps.filter.outputs.backend }}
+      fake_backend: ${{ steps.filter.outputs.fake_backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            agent:
+              - '.github/workflows/main-validation.yml'
+              - 'scripts/check_agent.sh'
+              - 'services/agent/**'
+              - 'services/proto/**'
+            backend:
+              - 'services/backend/.golangci.yaml'
+              - '.github/workflows/main-validation.yml'
+              - 'scripts/check_backend.sh'
+              - 'services/backend/go/**'
+              - 'services/proto/**'
+            fake_backend:
+              - '.github/workflows/main-validation.yml'
+              - 'scripts/check_fake_backend.sh'
+              - 'services/fake-backend/**'
+            frontend:
+              - '.github/workflows/main-validation.yml'
+              - 'scripts/check_frontend.sh'
+              - 'services/frontend/**'
+
+  agent:
+    name: Agent
+    needs: changes
+    if: needs.changes.outputs.agent == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Run agent checks
+        run: ./scripts/check_agent.sh
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: services/backend/go/go.mod
+          cache-dependency-path: services/backend/go/go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          working-directory: services/backend/go
+          args: --config=../.golangci.yaml ./...
+
+      - name: Run backend checks
+        run: ./scripts/check_backend.sh
+
+  fake-backend:
+    name: Fake Backend
+    needs: changes
+    if: needs.changes.outputs.fake_backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: services/fake-backend/pnpm-lock.yaml
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Run fake backend checks
+        run: ./scripts/check_fake_backend.sh
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: services/frontend/pnpm-lock.yaml
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Run frontend checks
+        run: ./scripts/check_frontend.sh
+
+  summary:
+    name: Validation Summary
+    if: always()
+    needs:
+      - changes
+      - agent
+      - backend
+      - fake-backend
+      - frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish summary
+        env:
+          AGENT_CHANGED: ${{ needs.changes.outputs.agent }}
+          BACKEND_CHANGED: ${{ needs.changes.outputs.backend }}
+          FAKE_BACKEND_CHANGED: ${{ needs.changes.outputs.fake_backend }}
+          FRONTEND_CHANGED: ${{ needs.changes.outputs.frontend }}
+          AGENT_RESULT: ${{ needs.agent.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          FAKE_BACKEND_RESULT: ${{ needs['fake-backend'].result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+        run: |
+          label_for() {
+            local changed="$1"
+            local result="$2"
+
+            if [ "$changed" != "true" ]; then
+              echo "⚪ skipped"
+              return
+            fi
+
+            case "$result" in
+              success) echo "✅ success" ;;
+              failure) echo "❌ failure" ;;
+              cancelled) echo "🟡 cancelled" ;;
+              skipped) echo "⚪ skipped" ;;
+              *) echo "🟣 $result" ;;
+            esac
+          }
+
+          summarize() {
+            local service="$1"
+            local changed="$2"
+            local result="$3"
+            local status_label
+
+            status_label="$(label_for "$changed" "$result")"
+
+            if [ "$changed" = "true" ]; then
+              echo "| $service | yes | $status_label |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| $service | no | $status_label |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          {
+            echo "## Main Validation Summary"
+            echo
+            echo "Parallel per-service validation for the current change set."
+            echo
+            echo "| Service | Changed | Result |"
+            echo "| --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          summarize "agent" "$AGENT_CHANGED" "$AGENT_RESULT"
+          summarize "backend" "$BACKEND_CHANGED" "$BACKEND_RESULT"
+          summarize "fake-backend" "$FAKE_BACKEND_CHANGED" "$FAKE_BACKEND_RESULT"
+          summarize "frontend" "$FRONTEND_CHANGED" "$FRONTEND_RESULT"
+
+          if { [ "$AGENT_CHANGED" = "true" ] && [ "$AGENT_RESULT" = "failure" ]; } || \
+             { [ "$BACKEND_CHANGED" = "true" ] && [ "$BACKEND_RESULT" = "failure" ]; } || \
+             { [ "$FAKE_BACKEND_CHANGED" = "true" ] && [ "$FAKE_BACKEND_RESULT" = "failure" ]; } || \
+             { [ "$FRONTEND_CHANGED" = "true" ] && [ "$FRONTEND_RESULT" = "failure" ]; }; then
+            exit 1
+          fi

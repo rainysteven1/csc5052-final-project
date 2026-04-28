@@ -1,0 +1,60 @@
+name: Fake Backend Render Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/render-fake-backend-deploy.yml"
+      - "services/fake-backend/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: render-fake-backend
+      url: ${{ vars.RENDER_FAKE_BACKEND_URL }}
+
+    steps:
+      - name: Create GitHub deployment
+        id: deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ github.token }}
+          environment: render-fake-backend
+          initial-status: in_progress
+          description: Trigger services/fake-backend deploy on Render
+
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "${RENDER_DEPLOY_HOOK_URL}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+
+          curl --fail --show-error --silent --request POST "${RENDER_DEPLOY_HOOK_URL}"
+
+      - name: Mark deployment success
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          state: success
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          environment-url: ${{ vars.RENDER_FAKE_BACKEND_URL }}
+          log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Mark deployment failure
+        if: failure() && steps.deployment.outputs.deployment_id != ''
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          state: failure
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
