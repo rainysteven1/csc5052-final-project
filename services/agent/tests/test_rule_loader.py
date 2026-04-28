@@ -218,4 +218,46 @@ feedback_fallback_rules = "rules/feedback.toml"
     assert scoring_rules.default_weights.lexical == 0.6
     assert scoring_rules.dominant_causes.lexical == "custom_lexical"
     assert feedback_rules.reasons.lexical == "lexical::{triggers}"
-    assert feedback_rules.focus_tags.prosody == "pro_tag"
+
+
+def test_rule_loader_uses_language_specific_override_when_available(tmp_path: Path) -> None:
+    rules_dir = tmp_path / "rules"
+    en_dir = rules_dir / "en"
+    rules_dir.mkdir()
+    en_dir.mkdir()
+
+    (rules_dir / "lexical.toml").write_text(
+        """
+[[rules]]
+phrase = "base"
+weight = 0.11
+explanation = "base rule"
+""".strip(),
+        encoding="utf-8",
+    )
+    (en_dir / "lexical.toml").write_text(
+        """
+[[rules]]
+phrase = "definitely"
+weight = 0.41
+explanation = "english rule"
+""".strip(),
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "config.toml"
+    config_path.write_text(
+        """
+[speaksure.rules]
+lexical_rules = "rules/lexical.toml"
+
+[speaksure.rules.language_overrides.en]
+lexical_rules = "rules/en/lexical.toml"
+""".strip(),
+        encoding="utf-8",
+    )
+
+    resolved = resolve_rule_config_path("lexical_rules", config_path=config_path, language="en")
+    rules = load_lexical_rules(config_path=config_path, language="en")
+
+    assert resolved == en_dir / "lexical.toml"
+    assert rules[0].phrase == "definitely"

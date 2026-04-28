@@ -23,6 +23,7 @@ def analyze_via_grpc(
     scenario: str,
     output_path: str | Path | None = None,
     transcript_override: str | None = None,
+    prompt_language_override: str | None = None,
     config_path: str | Path | None = None,
     upload_wandb: bool = False,
 ):
@@ -39,6 +40,8 @@ def analyze_via_grpc(
         config_path=str(Path(config_path).expanduser().resolve()) if config_path else "",
         upload_wandb=upload_wandb,
     )
+    if prompt_language_override:
+        request.metadata.add(key="prompt_language_override", value=prompt_language_override)
     try:
         with grpc.insecure_channel(grpc_target) as channel:
             stub = agent_service_pb2_grpc.AgentServiceStub(channel)

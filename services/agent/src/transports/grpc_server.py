@@ -20,6 +20,7 @@ AGENT_SERVICE_NAME = agent_service_pb2.DESCRIPTOR.services_by_name["AgentService
 
 class AgentServiceGrpcServicer(agent_service_pb2_grpc.AgentServiceServicer):
     def Analyze(self, request, context):  # noqa: N802
+        request_metadata = {str(item.key): str(item.value) for item in request.metadata}
         output_path = Path(request.output_path).expanduser().resolve() if request.output_path else None
         if output_path is None:
             audio_stem = Path(request.audio_path).stem or "analysis"
@@ -31,6 +32,7 @@ class AgentServiceGrpcServicer(agent_service_pb2_grpc.AgentServiceServicer):
             output=output_path,
             config_path=Path(request.config_path).expanduser().resolve() if request.config_path else None,
             transcript_override=request.transcript_override or None,
+            prompt_language_override=request_metadata.get("prompt_language_override") or None,
         )
         if request.upload_wandb and not execution.error:
             upload_single_run_to_wandb(

@@ -10,6 +10,7 @@ import tomllib
 from pydantic import BaseModel, Field
 
 from services.agent.src.config import default_config_path, load_config, repo_root
+from services.agent.src.language import normalize_runtime_language
 from services.agent.src.schemas.analysis import ContextOutput
 
 DEFAULT_RULE_PATHS = {
@@ -114,6 +115,7 @@ class ScoringWeightsConfig(BaseModel):
     lexical: float = 0.4
     prosody: float = 0.3
     disfluency: float = 0.3
+    context: float = 0.0
 
 
 class LevelThresholdsConfig(BaseModel):
@@ -180,12 +182,31 @@ class FeedbackFallbackRulesConfig(BaseModel):
     focus_tags: FeedbackTagsConfig = Field(default_factory=FeedbackTagsConfig)
 
 
-def _read_rule_config_map(config_path: str | Path | None = None) -> dict[str, str]:
+def _read_rule_sections(config_path: str | Path | None = None) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     cfg = load_config(config_path)
     rules = cfg.speaksure.get("rules", {})
     if not isinstance(rules, dict):
-        return {}
-    return {str(key): str(value) for key, value in rules.items()}
+        return {}, {}
+    base_paths = {
+        str(key): str(value)
+        for key, value in rules.items()
+        if isinstance(value, str)
+    }
+    language_overrides_raw = rules.get("language_overrides", {})
+    language_overrides: dict[str, dict[str, str]] = {}
+    if isinstance(language_overrides_raw, dict):
+        for language, values in language_overrides_raw.items():
+            if not isinstance(values, dict):
+                continue
+            normalized_language = normalize_runtime_language(language)
+            if normalized_language is None:
+                continue
+            language_overrides[normalized_language] = {
+                str(key): str(value)
+                for key, value in values.items()
+                if isinstance(value, str)
+            }
+    return base_paths, language_overrides
 
 
 def _resolve_relative_path(raw_path: str, *, config_path: str | Path | None = None) -> Path:
@@ -205,11 +226,22 @@ def _resolve_relative_path(raw_path: str, *, config_path: str | Path | None = No
     return config_relative
 
 
-def resolve_rule_config_path(rule_name: str, *, config_path: str | Path | None = None) -> Path:
+def resolve_rule_config_path(
+    rule_name: str,
+    *,
+    config_path: str | Path | None = None,
+    language: str | None = None,
+) -> Path:
     if rule_name not in DEFAULT_RULE_PATHS:
         raise KeyError(f"Unknown rule config: {rule_name}")
 
-    configured_paths = _read_rule_config_map(config_path)
+    configured_paths, language_overrides = _read_rule_sections(config_path)
+    normalized_language = normalize_runtime_language(language)
+    if normalized_language is not None:
+        raw_path = language_overrides.get(normalized_language, {}).get(rule_name)
+        if raw_path is not None:
+            return _resolve_relative_path(raw_path, config_path=config_path)
+
     raw_path = configured_paths.get(rule_name)
     if raw_path is not None:
         return _resolve_relative_path(raw_path, config_path=config_path)
@@ -219,8 +251,13 @@ def resolve_rule_config_path(rule_name: str, *, config_path: str | Path | None =
     return _resolve_relative_path(DEFAULT_RULE_PATHS[rule_name], config_path=default_config_path())
 
 
-def load_rule_document(rule_name: str, *, config_path: str | Path | None = None) -> dict[str, Any]:
-    path = resolve_rule_config_path(rule_name, config_path=config_path)
+def load_rule_document(
+    rule_name: str,
+    *,
+    config_path: str | Path | None = None,
+    language: str | None = None,
+) -> dict[str, Any]:
+    path = resolve_rule_config_path(rule_name, config_path=config_path, language=language)
     suffix = path.suffix.lower()
 
     if suffix == ".toml":
@@ -232,34 +269,58 @@ def load_rule_document(rule_name: str, *, config_path: str | Path | None = None)
     raise ValueError(f"Unsupported rule config format for {rule_name}: {path}")
 
 
-def load_lexical_rules(config_path: str | Path | None = None) -> list[LexicalRuleConfig]:
-    payload = load_rule_document("lexical_rules", config_path=config_path)
+def load_lexical_rules(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> list[LexicalRuleConfig]:
+    payload = load_rule_document("lexical_rules", config_path=config_path, language=language)
     raw_rules = payload.get("rules", [])
     if not isinstance(raw_rules, list):
         return []
     return [LexicalRuleConfig.model_validate(item) for item in raw_rules]
 
 
-def load_disfluency_rules(config_path: str | Path | None = None) -> DisfluencyRulesConfig:
-    payload = load_rule_document("disfluency_rules", config_path=config_path)
+def load_disfluency_rules(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> DisfluencyRulesConfig:
+    payload = load_rule_document("disfluency_rules", config_path=config_path, language=language)
     return DisfluencyRulesConfig.model_validate(payload)
 
 
-def load_prosody_rules(config_path: str | Path | None = None) -> ProsodyRulesConfig:
-    payload = load_rule_document("prosody_rules", config_path=config_path)
+def load_prosody_rules(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> ProsodyRulesConfig:
+    payload = load_rule_document("prosody_rules", config_path=config_path, language=language)
     return ProsodyRulesConfig.model_validate(payload)
 
 
-def load_context_defaults(config_path: str | Path | None = None) -> ContextDefaultsConfig:
-    payload = load_rule_document("context_defaults", config_path=config_path)
+def load_context_defaults(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> ContextDefaultsConfig:
+    payload = load_rule_document("context_defaults", config_path=config_path, language=language)
     return ContextDefaultsConfig.model_validate(payload)
 
 
-def load_scoring_rules(config_path: str | Path | None = None) -> ScoringRulesConfig:
-    payload = load_rule_document("scoring_rules", config_path=config_path)
+def load_scoring_rules(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> ScoringRulesConfig:
+    payload = load_rule_document("scoring_rules", config_path=config_path, language=language)
     return ScoringRulesConfig.model_validate(payload)
 
 
-def load_feedback_fallback_rules(config_path: str | Path | None = None) -> FeedbackFallbackRulesConfig:
-    payload = load_rule_document("feedback_fallback_rules", config_path=config_path)
+def load_feedback_fallback_rules(
+    config_path: str | Path | None = None,
+    *,
+    language: str | None = None,
+) -> FeedbackFallbackRulesConfig:
+    payload = load_rule_document("feedback_fallback_rules", config_path=config_path, language=language)
     return FeedbackFallbackRulesConfig.model_validate(payload)

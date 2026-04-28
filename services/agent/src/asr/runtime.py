@@ -7,10 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from services.agent.src.asr.config import missing_whisper_onnx_files, resolve_asr_backend_config
 from services.agent.src.asr.backends import OnnxWhisperBackendError, transcribe_with_onnx_whisper
+from services.agent.src.asr.config import missing_whisper_onnx_files, resolve_asr_backend_config
+from services.agent.src.asr.language_detector import detect_runtime_language
 from services.agent.src.asr.remote_api import RemoteAsrError, transcribe_with_remote_asr
 from services.agent.src.asr.transports.grpc_client import transcribe_with_grpc_asr
+from services.agent.src.language import normalize_runtime_language
 from services.agent.src.schemas.analysis import SpeechSegment
 from services.agent.src.services.artifact_loader import ArtifactBundle
 from services.agent.src.state import AnalysisState
@@ -223,9 +225,11 @@ def transcribe_audio(
                 state.meta["asr_mode"] = "manifest"
                 state.meta["manifest"] = manifest_metadata
                 if manifest_metadata.get("language"):
-                    state.meta["language"] = manifest_metadata["language"]
+                    state.meta["language"] = normalize_runtime_language(manifest_metadata["language"]) or str(
+                        manifest_metadata["language"]
+                    ).strip().lower()
             else:
-                language_hint = state.meta.get("language")
+                language_hint = normalize_runtime_language(state.meta.get("language"))
                 try:
                     if provider == "api":
                         transcription = transcribe_audio_file(
@@ -247,7 +251,9 @@ def transcribe_audio(
                         state.meta["asr_mode"] = "grpc"
                         state.meta["asr_grpc"] = remote_metadata
                         if remote_metadata.get("language"):
-                            state.meta["language"] = remote_metadata["language"]
+                            state.meta["language"] = normalize_runtime_language(remote_metadata["language"]) or str(
+                                remote_metadata["language"]
+                            ).strip().lower()
                         transcription = AudioTranscription(transcript=transcript, metadata=remote_metadata, warnings=[])
                     elif provider == "local":
                         transcription = transcribe_audio_file(
@@ -266,7 +272,9 @@ def transcribe_audio(
                     for warning in transcription.warnings:
                         state.add_warning(warning)
                     if transcription.metadata.get("language"):
-                        state.meta["language"] = transcription.metadata["language"]
+                        state.meta["language"] = normalize_runtime_language(transcription.metadata["language"]) or str(
+                            transcription.metadata["language"]
+                        ).strip().lower()
                 except RemoteAsrError as exc:
                     state.add_warning(f"Remote ASR unavailable: {exc}")
                     transcript = _fallback_transcript(audio_path)
@@ -275,6 +283,19 @@ def transcribe_audio(
 
     duration = state.audio.duration_seconds or 0.0
     state.transcript = transcript
+    if not normalize_runtime_language(state.meta.get("language")) and transcript.strip():
+        detection = detect_runtime_language(
+            transcript,
+            model_dir=artifacts.metadata.paths.get("language_detector_model_dir", ""),
+        )
+        detected_language = normalize_runtime_language(detection.get("language"))
+        if detected_language:
+            state.meta["language"] = detected_language
+        state.meta["language_confidence"] = detection.get("confidence", 0.0)
+        state.meta["language_source"] = detection.get("source", "unknown")
+    elif normalize_runtime_language(state.meta.get("language")):
+        state.meta["language"] = normalize_runtime_language(state.meta.get("language"))
+        state.meta.setdefault("language_source", "upstream")
     state.artifacts = artifacts.metadata.model_copy(deep=True)
     state.raw_asr_segments = [
         SpeechSegment(

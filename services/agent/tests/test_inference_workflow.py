@@ -56,6 +56,8 @@ def test_inference_workflow_runs_with_sidecar_transcript(tmp_path: Path) -> None
     assert result.agent_outputs.evidence_summary.segments
     assert result.agent_outputs.judgment.summary
     assert result.agent_outputs.judgment.coaching_focus
+    assert result.meta["language"] == "en"
+    assert result.meta["language_source"] in {"heuristic", "model"}
     assert result.result.overall_score and result.result.overall_score > 0
     assert "lexical_uncertainty" in result.result.dominant_causes
     assert "disfluency" in result.result.dominant_causes
@@ -87,6 +89,8 @@ def test_inference_workflow_reads_transcription_manifest(tmp_path: Path) -> None
 
     assert result.transcript == "这是来自 manifest 的转写结果"
     assert result.meta["asr_mode"] == "manifest"
+    assert result.meta["language"] == "zh"
+    assert result.meta["language_source"] == "upstream"
     assert result.meta["manifest"]["language"] == "zh"
     assert result.meta["manifest"]["transcription_model"] == "Whisper-large-v3"
 

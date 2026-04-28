@@ -29,6 +29,7 @@ def main() -> int:
     parser.add_argument("--scenario", default="interview")
     parser.add_argument("--output", required=True)
     parser.add_argument("--transcript-override", default=None)
+    parser.add_argument("--prompt-language", default=None)
     parser.add_argument("--config", default=None)
     parser.add_argument("--log-file", default=None)
     args = parser.parse_args()
@@ -49,6 +50,7 @@ def main() -> int:
         output=output,
         config_path=config_path,
         transcript_override=args.transcript_override,
+        prompt_language_override=args.prompt_language,
         progress_callback=_progress_callback,
     )
 

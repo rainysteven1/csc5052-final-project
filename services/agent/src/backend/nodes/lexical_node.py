@@ -17,6 +17,7 @@ from services.agent.src.backend.tools import (
 )
 from services.agent.src.backend.tools.rule_loader import load_lexical_rules
 from services.agent.src.backend.tools.text_rewrite import build_lexical_rewrite
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.schemas.analysis import LexicalOutput, SegmentHighlight
 from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
@@ -42,6 +43,10 @@ def _resolve_lexical_provider(
     except Exception:
         return "rule"
     return str(artifacts.metadata.providers.get("lexical", "rule")).strip().lower() or "rule"
+
+
+def _resolve_runtime_language(state: AnalysisState) -> str | None:
+    return resolve_prompt_language(state.meta)
 
 
 def _build_lexical_prompt_variables(
@@ -70,6 +75,7 @@ def _apply_lexical_llm_interpretation(
     *,
     config_path: str | Path | None = None,
 ) -> list[LexicalOutput]:
+    runtime_language = _resolve_runtime_language(state)
     llm_cfg = resolve_runtime_llm_config()
     if not llm_cfg.enabled:
         return outputs
@@ -103,16 +109,30 @@ def _apply_lexical_llm_interpretation(
             "lexical_system",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         user_prompt = render_prompt_template(
             "lexical_user",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         if prompt_debug_enabled():
             state.meta.setdefault("llm_prompts", {}).setdefault("lexical", {})[output.segment_id] = {
-                "system_template_path": str(resolve_prompt_template_path("lexical_system", config_path=config_path)),
-                "user_template_path": str(resolve_prompt_template_path("lexical_user", config_path=config_path)),
+                "system_template_path": str(
+                    resolve_prompt_template_path(
+                        "lexical_system",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
+                "user_template_path": str(
+                    resolve_prompt_template_path(
+                        "lexical_user",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
             }
@@ -122,7 +142,12 @@ def _apply_lexical_llm_interpretation(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 repair_schema_name="LexicalResult",
-                repair_schema_json=load_prompt_template("lexical_repair_schema", config_path=config_path),
+                repair_schema_json=load_prompt_template(
+                    "lexical_repair_schema",
+                    config_path=config_path,
+                    language=runtime_language,
+                ),
+                repair_language=runtime_language,
             )
         except LLMClientError as exc:
             state.add_warning(f"Lexical interpretation fallback for {output.segment_id}: {exc}")
@@ -169,9 +194,10 @@ def analyze_lexical_uncertainty(
     config_path: str | Path | None = None,
 ) -> AnalysisState:
     lexical_provider = _resolve_lexical_provider(state, config_path=config_path)
+    runtime_language = _resolve_runtime_language(state)
     lexical_rules = tuple(
         LexicalRule(rule.phrase, rule.weight, rule.explanation)
-        for rule in load_lexical_rules(config_path=config_path)
+        for rule in load_lexical_rules(config_path=config_path, language=runtime_language)
     )
     outputs: list[LexicalOutput] = []
 

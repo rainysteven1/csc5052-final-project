@@ -145,6 +145,37 @@ lexical_user = "prompts/lexical_user.md"
     assert rendered == 'LEX::presentation::{"segment_id":"seg_001"}'
 
 
+def test_prompt_loader_uses_language_override_when_available(tmp_path: Path) -> None:
+    config_path = tmp_path / "runtime.toml"
+    prompt_dir = tmp_path / "prompts"
+    en_dir = prompt_dir / "en"
+    prompt_dir.mkdir()
+    en_dir.mkdir()
+    (prompt_dir / "feedback_user.md").write_text("BASE::{payload_json}", encoding="utf-8")
+    (en_dir / "feedback_user.md").write_text("EN::{payload_json}", encoding="utf-8")
+    config_path.write_text(
+        """
+[speaksure.prompts]
+feedback_user = "prompts/feedback_user.md"
+
+[speaksure.prompts.language_overrides.en]
+feedback_user = "prompts/en/feedback_user.md"
+""".strip(),
+        encoding="utf-8",
+    )
+
+    path = resolve_prompt_template_path("feedback_user", config_path=config_path, language="en")
+    rendered = render_prompt_template(
+        "feedback_user",
+        variables={"payload_json": '{"segment_id":"seg_001"}'},
+        config_path=config_path,
+        language="en",
+    )
+
+    assert path == en_dir / "feedback_user.md"
+    assert rendered == 'EN::{"segment_id":"seg_001"}'
+
+
 def test_custom_repair_schema_path_can_be_configured(tmp_path: Path) -> None:
     config_path = tmp_path / "runtime.toml"
     prompt_dir = tmp_path / "schemas"

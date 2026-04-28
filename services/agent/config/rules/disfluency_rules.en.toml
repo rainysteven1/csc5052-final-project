@@ -1,0 +1,46 @@
+[scoring]
+filler_weight = 0.12
+self_repair_weight = 0.16
+repetition_weight = 0.18
+repetition_token_pattern = "\\b[\\w']+\\b"
+
+[explanations]
+filler = "This segment includes fillers that interrupt fluency."
+repeat = "This segment includes repetition that slows message delivery."
+self_repair = "This segment includes self-repairs that weaken delivery stability."
+
+[[filler_patterns]]
+label = "um"
+pattern = "\\bum\\b"
+
+[[filler_patterns]]
+label = "uh"
+pattern = "\\buh\\b"
+
+[[filler_patterns]]
+label = "er"
+pattern = "\\ber\\b"
+
+[[filler_patterns]]
+label = "ah"
+pattern = "\\bah\\b"
+
+[[filler_patterns]]
+label = "you know"
+pattern = "\\byou know\\b"
+
+[[filler_patterns]]
+label = "like"
+pattern = "\\blike\\b"
+
+[[self_repair_patterns]]
+label = "i mean"
+pattern = "\\bi mean\\b"
+
+[[self_repair_patterns]]
+label = "sorry"
+pattern = "\\bsorry\\b"
+
+[[self_repair_patterns]]
+label = "rather"
+pattern = "\\brather\\b"

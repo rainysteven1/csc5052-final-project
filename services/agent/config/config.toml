@@ -30,7 +30,7 @@ disfluency_provider = "rule"
 
 [speaksure.wandb]
 project = "speaksure-runtime"
-mode = "online"
+mode = "disabled"
 
 [speaksure.prompts]
 lexical_system = "prompts/lexical_system.md"
@@ -54,6 +54,38 @@ json_repair_user = "prompts/json_repair_user.md"
 judgment_repair_schema = "prompts/schemas/judgment_result.json"
 feedback_repair_schema = "prompts/schemas/feedback_segments_result.json"
 
+[speaksure.prompts.language_overrides.en]
+lexical_system = "prompts/en/lexical_system.md"
+lexical_user = "prompts/en/lexical_user.md"
+prosody_system = "prompts/en/prosody_system.md"
+prosody_user = "prompts/en/prosody_user.md"
+disfluency_system = "prompts/en/disfluency_system.md"
+disfluency_user = "prompts/en/disfluency_user.md"
+coaching_system = "prompts/en/coaching_system.md"
+coaching_user = "prompts/en/coaching_user.md"
+judgment_system = "prompts/en/judgment_system.md"
+judgment_user = "prompts/en/judgment_user.md"
+feedback_system = "prompts/en/feedback_system.md"
+feedback_user = "prompts/en/feedback_user.md"
+json_repair_system = "prompts/en/json_repair_system.md"
+json_repair_user = "prompts/en/json_repair_user.md"
+
+[speaksure.prompts.language_overrides.zh]
+lexical_system = "prompts/zh/lexical_system.md"
+lexical_user = "prompts/zh/lexical_user.md"
+prosody_system = "prompts/zh/prosody_system.md"
+prosody_user = "prompts/zh/prosody_user.md"
+disfluency_system = "prompts/zh/disfluency_system.md"
+disfluency_user = "prompts/zh/disfluency_user.md"
+coaching_system = "prompts/zh/coaching_system.md"
+coaching_user = "prompts/zh/coaching_user.md"
+judgment_system = "prompts/zh/judgment_system.md"
+judgment_user = "prompts/zh/judgment_user.md"
+feedback_system = "prompts/zh/feedback_system.md"
+feedback_user = "prompts/zh/feedback_user.md"
+json_repair_system = "prompts/zh/json_repair_system.md"
+json_repair_user = "prompts/zh/json_repair_user.md"
+
 [speaksure.rules]
 lexical_rules = "rules/lexical_rules.toml"
 disfluency_rules = "rules/disfluency_rules.toml"
@@ -61,6 +93,22 @@ prosody_rules = "rules/prosody_rules.toml"
 context_defaults = "rules/context_defaults.toml"
 scoring_rules = "rules/scoring_rules.toml"
 feedback_fallback_rules = "rules/feedback_fallback_rules.toml"
+
+[speaksure.rules.language_overrides.en]
+lexical_rules = "rules/lexical_rules.en.toml"
+disfluency_rules = "rules/disfluency_rules.en.toml"
+prosody_rules = "rules/prosody_rules.en.toml"
+context_defaults = "rules/context_defaults.en.toml"
+scoring_rules = "rules/scoring_rules.en.toml"
+feedback_fallback_rules = "rules/feedback_fallback_rules.en.toml"
+
+[speaksure.rules.language_overrides.zh]
+lexical_rules = "rules/lexical_rules.zh.toml"
+disfluency_rules = "rules/disfluency_rules.zh.toml"
+prosody_rules = "rules/prosody_rules.zh.toml"
+context_defaults = "rules/context_defaults.zh.toml"
+scoring_rules = "rules/scoring_rules.zh.toml"
+feedback_fallback_rules = "rules/feedback_fallback_rules.zh.toml"
 
 [speaksure.contexts.interview.weights]
 lexical = 0.35
@@ -106,3 +154,48 @@ context = 0.25
 
 [speaksure.contexts.casual]
 style_constraints = ["自然表达即可"]
+
+[speaksure.contexts.language_overrides.en.interview.weights]
+lexical = 0.35
+prosody = 0.30
+disfluency = 0.20
+context = 0.15
+
+[speaksure.contexts.language_overrides.en.interview]
+style_constraints = ["Use fewer hedges", "Answer more directly"]
+
+[speaksure.contexts.language_overrides.en.presentation.weights]
+lexical = 0.30
+prosody = 0.35
+disfluency = 0.20
+context = 0.15
+
+[speaksure.contexts.language_overrides.en.presentation]
+style_constraints = ["Keep pacing steady", "Control long pauses"]
+
+[speaksure.contexts.language_overrides.en.academic.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.20
+context = 0.30
+
+[speaksure.contexts.language_overrides.en.academic]
+style_constraints = ["Allow measured caution when needed", "Avoid repeated self-repairs"]
+
+[speaksure.contexts.language_overrides.en.business.weights]
+lexical = 0.35
+prosody = 0.25
+disfluency = 0.20
+context = 0.20
+
+[speaksure.contexts.language_overrides.en.business]
+style_constraints = ["Keep the message direct and clear", "Reduce vague commitment words"]
+
+[speaksure.contexts.language_overrides.en.casual.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25
+
+[speaksure.contexts.language_overrides.en.casual]
+style_constraints = ["Keep the delivery natural"]

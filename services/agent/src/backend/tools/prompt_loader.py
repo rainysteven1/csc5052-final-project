@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from services.agent.src.config import default_config_path, load_config, repo_root
+from services.agent.src.language import normalize_runtime_language
 
 DEFAULT_PROMPT_PATHS = {
     "lexical_system": "prompts/lexical_system.md",
@@ -58,12 +59,32 @@ PROMPT_ENV_MAP = {
 _PLACEHOLDER_PATTERN = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
-def _read_prompt_config(config_path: str | Path | None = None) -> dict[str, str]:
+def _read_prompt_sections(config_path: str | Path | None = None) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     cfg = load_config(config_path)
     prompts = cfg.speaksure.get("prompts", {})
     if not isinstance(prompts, dict):
-        return {}
-    return {str(key): str(value) for key, value in prompts.items()}
+        return {}, {}
+
+    base_paths = {
+        str(key): str(value)
+        for key, value in prompts.items()
+        if isinstance(value, str)
+    }
+    language_overrides_raw = prompts.get("language_overrides", {})
+    language_overrides: dict[str, dict[str, str]] = {}
+    if isinstance(language_overrides_raw, dict):
+        for language, values in language_overrides_raw.items():
+            if not isinstance(values, dict):
+                continue
+            normalized_language = normalize_runtime_language(language)
+            if normalized_language is None:
+                continue
+            language_overrides[normalized_language] = {
+                str(key): str(value)
+                for key, value in values.items()
+                if isinstance(value, str)
+            }
+    return base_paths, language_overrides
 
 
 def _resolve_relative_path(raw_path: str, *, config_path: str | Path | None = None) -> Path:
@@ -83,7 +104,12 @@ def _resolve_relative_path(raw_path: str, *, config_path: str | Path | None = No
     return config_relative
 
 
-def resolve_prompt_template_path(template_name: str, *, config_path: str | Path | None = None) -> Path:
+def resolve_prompt_template_path(
+    template_name: str,
+    *,
+    config_path: str | Path | None = None,
+    language: str | None = None,
+) -> Path:
     if template_name not in DEFAULT_PROMPT_PATHS:
         raise KeyError(f"Unknown prompt template: {template_name}")
 
@@ -92,7 +118,13 @@ def resolve_prompt_template_path(template_name: str, *, config_path: str | Path 
     if raw_path:
         return _resolve_relative_path(raw_path, config_path=config_path)
 
-    configured_paths = _read_prompt_config(config_path)
+    configured_paths, language_overrides = _read_prompt_sections(config_path)
+    normalized_language = normalize_runtime_language(language)
+    if normalized_language is not None:
+        raw_path = language_overrides.get(normalized_language, {}).get(template_name)
+        if raw_path is not None:
+            return _resolve_relative_path(raw_path, config_path=config_path)
+
     raw_path = configured_paths.get(template_name)
     if raw_path is not None:
         return _resolve_relative_path(raw_path, config_path=config_path)
@@ -100,8 +132,13 @@ def resolve_prompt_template_path(template_name: str, *, config_path: str | Path 
     return _resolve_relative_path(DEFAULT_PROMPT_PATHS[template_name], config_path=default_config_path())
 
 
-def load_prompt_template(template_name: str, *, config_path: str | Path | None = None) -> str:
-    path = resolve_prompt_template_path(template_name, config_path=config_path)
+def load_prompt_template(
+    template_name: str,
+    *,
+    config_path: str | Path | None = None,
+    language: str | None = None,
+) -> str:
+    path = resolve_prompt_template_path(template_name, config_path=config_path, language=language)
     return path.read_text(encoding="utf-8").strip()
 
 
@@ -115,8 +152,9 @@ def render_prompt_template(
     *,
     variables: Mapping[str, object],
     config_path: str | Path | None = None,
+    language: str | None = None,
 ) -> str:
-    template = load_prompt_template(template_name, config_path=config_path)
+    template = load_prompt_template(template_name, config_path=config_path, language=language)
 
     def _replace(match: re.Match[str]) -> str:
         key = match.group(1)

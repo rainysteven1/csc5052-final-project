@@ -17,11 +17,24 @@ from services.agent.src.backend.tools import (
     resolve_prompt_template_path,
     resolve_runtime_llm_config,
 )
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.logger import logger
 from services.agent.src.schemas.analysis import FeedbackOutput, SegmentFeedback
 from services.agent.src.state import AnalysisState
 
 SEVERITY_ORDER = ["stable", "low", "medium", "high"]
+RISK_SEGMENT_PRACTICE_PREFIX = {
+    "en": "Prioritize the overall coaching focus: {focus}",
+    "zh": "优先结合整体判断聚焦：{focus}",
+}
+RISK_SEGMENT_REASON_PREFIX = {
+    "en": "This segment is marked as a priority risk segment. ",
+    "zh": "该句被整体判断识别为优先关注片段。",
+}
+
+
+def _resolve_runtime_language(state: AnalysisState) -> str:
+    return resolve_prompt_language(state.meta) or "zh"
 
 
 def _render_feedback_template(template: str, **variables: str) -> str:
@@ -82,7 +95,8 @@ def _build_feedback_fallback(
     lexical_by_segment = {item.segment_id: item for item in state.agent_outputs.lexical}
     prosody_by_segment = {item.segment_id: item for item in state.agent_outputs.prosody}
     disfluency_by_segment = {item.segment_id: item for item in state.agent_outputs.disfluency}
-    rules = load_feedback_fallback_rules(config_path=config_path)
+    runtime_language = _resolve_runtime_language(state)
+    rules = load_feedback_fallback_rules(config_path=config_path, language=runtime_language)
     feedback_outputs: list[FeedbackOutput] = []
     priority_dimensions = _priority_dimensions(state)
     risk_segment_ids = set(state.agent_outputs.judgment.risk_segments)
@@ -145,13 +159,15 @@ def _build_feedback_fallback(
             practice_items = list(rules.practices.stable_steps)
 
         if segment.segment_id in risk_segment_ids and state.agent_outputs.judgment.coaching_focus:
-            practice_prefix = f"优先结合整体判断聚焦：{state.agent_outputs.judgment.coaching_focus[0]}"
+            practice_prefix = RISK_SEGMENT_PRACTICE_PREFIX[runtime_language].format(
+                focus=state.agent_outputs.judgment.coaching_focus[0]
+            )
             if practice:
                 practice = f"{practice_prefix}{rules.join.practice_delimiter}{practice}"
             else:
                 practice = practice_prefix
             if not reasons:
-                reason = f"该句被整体判断识别为优先关注片段。{reason}"
+                reason = f"{RISK_SEGMENT_REASON_PREFIX[runtime_language]}{reason}"
 
         segment.feedback = SegmentFeedback(
             severity=severity,
@@ -196,6 +212,7 @@ def _apply_llm_feedback(
     *,
     config_path: str | Path | None = None,
 ) -> list[FeedbackOutput]:
+    runtime_language = _resolve_runtime_language(state)
     llm_cfg = resolve_runtime_llm_config()
     if not llm_cfg.enabled:
         return fallback_outputs
@@ -207,18 +224,30 @@ def _apply_llm_feedback(
             "feedback_system",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         user_prompt = render_prompt_template(
             "feedback_user",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         if prompt_debug_enabled():
             state.meta.setdefault("llm_prompts", {})["feedback"] = {
                 "system_template_path": str(
-                    resolve_prompt_template_path("feedback_system", config_path=config_path)
+                    resolve_prompt_template_path(
+                        "feedback_system",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
                 ),
-                "user_template_path": str(resolve_prompt_template_path("feedback_user", config_path=config_path)),
+                "user_template_path": str(
+                    resolve_prompt_template_path(
+                        "feedback_user",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
             }
@@ -226,7 +255,12 @@ def _apply_llm_feedback(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             repair_schema_name="FeedbackSegmentsResult",
-            repair_schema_json=load_prompt_template("feedback_repair_schema", config_path=config_path),
+            repair_schema_json=load_prompt_template(
+                "feedback_repair_schema",
+                config_path=config_path,
+                language=runtime_language,
+            ),
+            repair_language=runtime_language,
         )
     except LLMClientError as exc:
         state.add_warning(f"Feedback LLM unavailable: {exc}")

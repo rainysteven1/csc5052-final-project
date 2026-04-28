@@ -19,20 +19,47 @@ from services.agent.src.backend.tools import (
     resolve_runtime_llm_config,
     score_state,
 )
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.logger import logger
 from services.agent.src.schemas.analysis import JudgmentOutput
 from services.agent.src.state import AnalysisState
 
 FOCUS_LABELS = {
-    "lexical": "优先去掉模糊词并直接表达核心观点",
-    "prosody": "优先稳定语速、停顿和句子起伏",
-    "disfluency": "优先消除填充词、重复和自我修正",
+    "en": {
+        "lexical": "Replace hedging with a more direct core statement",
+        "prosody": "Stabilize pacing, pauses, and sentence contour first",
+        "disfluency": "Reduce fillers, repetition, and self-repairs first",
+    },
+    "zh": {
+        "lexical": "优先去掉模糊词并直接表达核心观点",
+        "prosody": "优先稳定语速、停顿和句子起伏",
+        "disfluency": "优先消除填充词、重复和自我修正",
+    },
 }
 
 STRENGTH_LABELS = {
-    "lexical": "措辞整体较直接",
-    "prosody": "节奏与停顿整体较稳定",
-    "disfluency": "语流整体较干净",
+    "en": {
+        "lexical": "Wording stays mostly direct",
+        "prosody": "Pacing and pauses stay mostly stable",
+        "disfluency": "Delivery stays mostly clean",
+    },
+    "zh": {
+        "lexical": "措辞整体较直接",
+        "prosody": "节奏与停顿整体较稳定",
+        "disfluency": "语流整体较干净",
+    },
+}
+DEFAULT_CONTEXT_FOCUS = {
+    "en": "Keep the delivery stable while staying focused on: {item}",
+    "zh": "保持当前风格，同时继续关注：{item}",
+}
+DEFAULT_FALLBACK_FOCUS = {
+    "en": "Maintain the current delivery and keep reviewing short speaking units",
+    "zh": "保持当前表达稳定性，并持续做短句复盘",
+}
+DEFAULT_GLOBAL_STRENGTH = {
+    "en": "Overall intelligibility stays solid",
+    "zh": "整体表达可懂度较好",
 }
 
 CAUSE_TO_DIMENSION = {
@@ -56,31 +83,42 @@ def _dedupe(items: list[str], *, limit: int | None = None) -> list[str]:
     return result
 
 
-def _build_coaching_focus(state: AnalysisState, score_payload: ScorePayload) -> list[str]:
+def _resolve_runtime_language(state: AnalysisState) -> str:
+    return resolve_prompt_language(state.meta) or "zh"
+
+
+def _build_coaching_focus(
+    state: AnalysisState,
+    score_payload: ScorePayload,
+    *,
+    runtime_language: str,
+) -> list[str]:
     focus: list[str] = []
+    focus_labels = FOCUS_LABELS[runtime_language]
     for cause in score_payload["dominant_causes"]:
         dimension = CAUSE_TO_DIMENSION.get(cause)
         if dimension is not None:
-            focus.append(FOCUS_LABELS[dimension])
+            focus.append(focus_labels[dimension])
 
     for dimension in state.agent_outputs.evidence_summary.dominant_dimensions:
-        if dimension in FOCUS_LABELS:
-            focus.append(FOCUS_LABELS[dimension])
+        if dimension in focus_labels:
+            focus.append(focus_labels[dimension])
 
     if not focus:
         focus.extend(
-            f"保持当前风格，同时继续关注：{item}"
+            DEFAULT_CONTEXT_FOCUS[runtime_language].format(item=item)
             for item in state.agent_outputs.context.style_constraints[:2]
         )
 
     if not focus:
-        focus.append("保持当前表达稳定性，并持续做短句复盘")
+        focus.append(DEFAULT_FALLBACK_FOCUS[runtime_language])
 
     return _dedupe(focus, limit=3)
 
 
-def _build_strengths(score_payload: ScorePayload) -> list[str]:
+def _build_strengths(score_payload: ScorePayload, *, runtime_language: str) -> list[str]:
     strengths: list[str] = []
+    strength_labels = STRENGTH_LABELS[runtime_language]
     averages = {
         "lexical": score_payload["lexical_average"],
         "prosody": score_payload["prosody_average"],
@@ -88,23 +126,33 @@ def _build_strengths(score_payload: ScorePayload) -> list[str]:
     }
     for dimension, score in averages.items():
         if score <= 0.05:
-            strengths.append(STRENGTH_LABELS[dimension])
+            strengths.append(strength_labels[dimension])
 
-    if not strengths and score_payload["overall_score"] <= 0.2:
-        strengths.append("整体表达可懂度较好")
+    if not strengths and score_payload["risk_score"] <= 0.2:
+        strengths.append(DEFAULT_GLOBAL_STRENGTH[runtime_language])
 
     return _dedupe(strengths, limit=3)
 
 
-def _build_deterministic_judgment(state: AnalysisState, score_payload: ScorePayload) -> JudgmentPayload:
+def _build_deterministic_judgment(
+    state: AnalysisState,
+    score_payload: ScorePayload,
+    *,
+    runtime_language: str,
+) -> JudgmentPayload:
     evidence_summary = state.agent_outputs.evidence_summary
     return {
         "summary": score_payload["summary"],
         "dominant_causes": list(score_payload["dominant_causes"]),
-        "coaching_focus": _build_coaching_focus(state, score_payload),
+        "coaching_focus": _build_coaching_focus(
+            state,
+            score_payload,
+            runtime_language=runtime_language,
+        ),
         "risk_segments": [item.segment_id for item in evidence_summary.risk_segments],
-        "strengths": _build_strengths(score_payload),
+        "strengths": _build_strengths(score_payload, runtime_language=runtime_language),
         "overall_score": score_payload["overall_score"],
+        "risk_score": score_payload["risk_score"],
         "level": score_payload["level"],
     }
 
@@ -152,10 +200,16 @@ def synthesize_judgment(
     *,
     enable_llm: bool = True,
 ) -> AnalysisState:
+    runtime_language = _resolve_runtime_language(state)
     score_payload = score_state(state, config_path=str(config_path) if config_path is not None else None)
-    judgment_payload = _build_deterministic_judgment(state, score_payload)
+    judgment_payload = _build_deterministic_judgment(
+        state,
+        score_payload,
+        runtime_language=runtime_language,
+    )
 
     state.result.overall_score = score_payload["overall_score"]
+    state.result.risk_score = score_payload["risk_score"]
     state.result.level = score_payload["level"]
     state.result.dominant_causes = list(judgment_payload["dominant_causes"])
     state.result.summary = judgment_payload["summary"]
@@ -169,19 +223,29 @@ def synthesize_judgment(
                 "judgment_system",
                 variables=prompt_variables,
                 config_path=config_path,
+                language=runtime_language,
             )
             user_prompt = render_prompt_template(
                 "judgment_user",
                 variables=prompt_variables,
                 config_path=config_path,
+                language=runtime_language,
             )
             if prompt_debug_enabled():
                 prompt_payload = {
                     "system_template_path": str(
-                        resolve_prompt_template_path("judgment_system", config_path=config_path)
+                        resolve_prompt_template_path(
+                            "judgment_system",
+                            config_path=config_path,
+                            language=runtime_language,
+                        )
                     ),
                     "user_template_path": str(
-                        resolve_prompt_template_path("judgment_user", config_path=config_path)
+                        resolve_prompt_template_path(
+                            "judgment_user",
+                            config_path=config_path,
+                            language=runtime_language,
+                        )
                     ),
                     "system_prompt": system_prompt,
                     "user_prompt": user_prompt,
@@ -191,7 +255,12 @@ def synthesize_judgment(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 repair_schema_name="JudgmentResult",
-                repair_schema_json=load_prompt_template("judgment_repair_schema", config_path=config_path),
+                repair_schema_json=load_prompt_template(
+                    "judgment_repair_schema",
+                    config_path=config_path,
+                    language=runtime_language,
+                ),
+                repair_language=runtime_language,
             )
             judgment_payload = _merge_judgment_payload(judgment_payload, llm_payload)
             judgment_payload["provider"] = client.provider

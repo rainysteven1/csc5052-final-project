@@ -1,0 +1,27 @@
+[speech_rate]
+slow_threshold = 2.0
+slow_weight = 0.18
+slow_cap = 0.35
+slow_explanation = "The speaking rate is slow, so the delivery sounds less crisp."
+fast_threshold = 4.8
+fast_weight = 0.08
+fast_cap = 0.20
+fast_explanation = "The speaking rate is fast, which may reduce delivery stability."
+
+[pause]
+threshold = 0.5
+weight = 0.25
+cap = 0.25
+explanation = "The pause before the segment is long enough to disrupt flow."
+
+[energy]
+flat_threshold = 0.05
+min_duration = 0.5
+penalty = 0.12
+explanation = "Energy variation is flat, so the delivery sounds slightly monotone."
+
+[pitch]
+flat_threshold = 0.01
+min_duration = 0.5
+penalty = 0.08
+explanation = "Pitch variation is limited, so the delivery lacks contour."

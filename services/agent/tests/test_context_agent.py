@@ -78,3 +78,32 @@ context_defaults = "rules/contexts.toml"
     assert result.agent_outputs.context.style_constraints == ["custom demo context"]
     assert fallback.agent_outputs.context.scenario == "unknown"
     assert fallback.agent_outputs.context.style_constraints == ["custom fallback"]
+
+
+def test_load_context_config_prefers_language_override_when_available(tmp_path: Path) -> None:
+    config_path = tmp_path / "context.toml"
+    config_path.write_text(
+        """
+[speaksure.contexts.interview.weights]
+lexical = 0.6
+disfluency = 0.1
+
+[speaksure.contexts.interview]
+style_constraints = ["中文默认"]
+
+[speaksure.contexts.language_overrides.en.interview.weights]
+lexical = 0.4
+prosody = 0.4
+disfluency = 0.1
+context = 0.1
+
+[speaksure.contexts.language_overrides.en.interview]
+style_constraints = ["be direct", "trim hedges"]
+""".strip(),
+        encoding="utf-8",
+    )
+
+    context = load_context_config("interview", config_path=config_path, language="en")
+
+    assert context.weights["lexical"] == 0.4
+    assert context.style_constraints == ["be direct", "trim hedges"]

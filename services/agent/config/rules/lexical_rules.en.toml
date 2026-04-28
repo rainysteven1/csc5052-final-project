@@ -1,0 +1,39 @@
+[[rules]]
+phrase = "i think"
+weight = 0.24
+explanation = "This hedge weakens directness and commitment."
+
+[[rules]]
+phrase = "maybe"
+weight = 0.22
+explanation = "This vague wording lowers certainty."
+
+[[rules]]
+phrase = "probably"
+weight = 0.22
+explanation = "This probabilistic wording sounds cautious rather than firm."
+
+[[rules]]
+phrase = "i guess"
+weight = 0.24
+explanation = "This phrasing sounds speculative rather than confident."
+
+[[rules]]
+phrase = "kind of"
+weight = 0.18
+explanation = "This softening phrase weakens the force of the statement."
+
+[[rules]]
+phrase = "sort of"
+weight = 0.18
+explanation = "This softening phrase weakens the force of the statement."
+
+[[rules]]
+phrase = "not sure"
+weight = 0.30
+explanation = "This explicitly signals uncertainty and strongly reduces confidence."
+
+[[rules]]
+phrase = "try to"
+weight = 0.14
+explanation = "This phrasing makes the commitment sound tentative."

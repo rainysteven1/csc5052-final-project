@@ -1,0 +1,23 @@
+[reasons]
+lexical = "包含 {triggers} 等不确定性措辞"
+prosody = "语速、停顿或语调稳定性不足"
+disfluency = "存在 {issue_types} 等流畅度问题"
+stable = "该句在 lexical、prosody 和 disfluency 维度没有明显问题。"
+
+[practices]
+lexical = "去掉模糊词后重复朗读 3 次，保持句首直接进入核心观点"
+prosody = "按短句切分朗读，控制句前停顿，并保持每句语速稳定"
+disfluency = "先放慢语速朗读一遍，再用无填充词版本重复 3 次"
+stable = "保持当前直接表达方式，继续检查语速和停顿即可。"
+stable_steps = ["保持当前直接表达方式", "继续检查语速和停顿即可"]
+
+[join]
+prefix = "该句"
+delimiter = "，且"
+suffix = "。"
+practice_delimiter = "；"
+
+[focus_tags]
+lexical = "lexical"
+prosody = "prosody"
+disfluency = "disfluency"

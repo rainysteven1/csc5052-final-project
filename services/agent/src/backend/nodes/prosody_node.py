@@ -17,6 +17,7 @@ from services.agent.src.backend.tools import (
 )
 from services.agent.src.backend.tools.feature_extractor import extract_segment_features
 from services.agent.src.backend.tools.rule_loader import load_prosody_rules
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.schemas.analysis import ProsodyOutput
 from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
@@ -35,6 +36,10 @@ def _resolve_prosody_provider(
     except Exception:
         return "rule"
     return str(artifacts.metadata.providers.get("prosody", "rule")).strip().lower() or "rule"
+
+
+def _resolve_runtime_language(state: AnalysisState) -> str | None:
+    return resolve_prompt_language(state.meta)
 
 
 def _build_prosody_prompt_variables(
@@ -63,6 +68,7 @@ def _apply_prosody_llm_interpretation(
     *,
     config_path: str | Path | None = None,
 ) -> list[ProsodyOutput]:
+    runtime_language = _resolve_runtime_language(state)
     llm_cfg = resolve_runtime_llm_config()
     if not llm_cfg.enabled:
         return outputs
@@ -96,16 +102,30 @@ def _apply_prosody_llm_interpretation(
             "prosody_system",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         user_prompt = render_prompt_template(
             "prosody_user",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         if prompt_debug_enabled():
             state.meta.setdefault("llm_prompts", {}).setdefault("prosody", {})[output.segment_id] = {
-                "system_template_path": str(resolve_prompt_template_path("prosody_system", config_path=config_path)),
-                "user_template_path": str(resolve_prompt_template_path("prosody_user", config_path=config_path)),
+                "system_template_path": str(
+                    resolve_prompt_template_path(
+                        "prosody_system",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
+                "user_template_path": str(
+                    resolve_prompt_template_path(
+                        "prosody_user",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
             }
@@ -115,7 +135,12 @@ def _apply_prosody_llm_interpretation(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 repair_schema_name="ProsodyResult",
-                repair_schema_json=load_prompt_template("prosody_repair_schema", config_path=config_path),
+                repair_schema_json=load_prompt_template(
+                    "prosody_repair_schema",
+                    config_path=config_path,
+                    language=runtime_language,
+                ),
+                repair_language=runtime_language,
             )
         except LLMClientError as exc:
             state.add_warning(f"Prosody interpretation fallback for {output.segment_id}: {exc}")
@@ -149,9 +174,10 @@ def analyze_prosody(
     config_path: str | Path | None = None,
 ) -> AnalysisState:
     prosody_provider = _resolve_prosody_provider(state, config_path=config_path)
+    runtime_language = _resolve_runtime_language(state)
     audio_path = state.audio.normalized_path or state.audio.source_path
     resolved_audio = Path(audio_path).expanduser().resolve()
-    rules = load_prosody_rules(config_path=config_path)
+    rules = load_prosody_rules(config_path=config_path, language=runtime_language)
     outputs: list[ProsodyOutput] = []
 
     for segment in state.segments:

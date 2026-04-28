@@ -1,0 +1,59 @@
+[contexts.interview]
+scenario = "interview"
+style_constraints = ["Use fewer hedges", "Answer more directly"]
+
+[contexts.interview.weights]
+lexical = 0.35
+prosody = 0.30
+disfluency = 0.20
+context = 0.15
+
+[contexts.presentation]
+scenario = "presentation"
+style_constraints = ["Keep pacing steady", "Control long pauses"]
+
+[contexts.presentation.weights]
+lexical = 0.30
+prosody = 0.35
+disfluency = 0.20
+context = 0.15
+
+[contexts.academic]
+scenario = "academic"
+style_constraints = ["Allow measured caution when needed", "Avoid repeated self-repairs"]
+
+[contexts.academic.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.20
+context = 0.30
+
+[contexts.business]
+scenario = "business"
+style_constraints = ["Keep the message direct and clear", "Reduce vague commitment words"]
+
+[contexts.business.weights]
+lexical = 0.35
+prosody = 0.25
+disfluency = 0.20
+context = 0.20
+
+[contexts.casual]
+scenario = "casual"
+style_constraints = ["Keep the delivery natural"]
+
+[contexts.casual.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25
+
+[fallback]
+scenario = "default"
+style_constraints = ["Use the default scenario configuration"]
+
+[fallback.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25

@@ -1,0 +1,59 @@
+[contexts.interview]
+scenario = "interview"
+style_constraints = ["避免过多弱化表达", "建议回答更直接"]
+
+[contexts.interview.weights]
+lexical = 0.35
+prosody = 0.30
+disfluency = 0.20
+context = 0.15
+
+[contexts.presentation]
+scenario = "presentation"
+style_constraints = ["保持节奏稳定", "控制长停顿"]
+
+[contexts.presentation.weights]
+lexical = 0.30
+prosody = 0.35
+disfluency = 0.20
+context = 0.15
+
+[contexts.academic]
+scenario = "academic"
+style_constraints = ["允许适度谨慎表达", "避免连续自我修正"]
+
+[contexts.academic.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.20
+context = 0.30
+
+[contexts.business]
+scenario = "business"
+style_constraints = ["表达应直接清晰", "减少模糊承诺词"]
+
+[contexts.business.weights]
+lexical = 0.35
+prosody = 0.25
+disfluency = 0.20
+context = 0.20
+
+[contexts.casual]
+scenario = "casual"
+style_constraints = ["自然表达即可"]
+
+[contexts.casual.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25
+
+[fallback]
+scenario = "default"
+style_constraints = ["使用默认场景配置"]
+
+[fallback.weights]
+lexical = 0.25
+prosody = 0.25
+disfluency = 0.25
+context = 0.25

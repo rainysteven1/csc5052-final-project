@@ -25,6 +25,7 @@ def test_score_state_reads_scoring_rules_from_custom_config(tmp_path: Path) -> N
 lexical = 0.6
 prosody = 0.2
 disfluency = 0.2
+context = 0.0
 
 [level_thresholds]
 high = 0.8
@@ -70,8 +71,9 @@ scoring_rules = "rules/scoring.toml"
 
     payload = score_state(state, config_path=config_path)
 
-    assert payload["overall_score"] == 0.42
-    assert payload["level"] == "medium"
+    assert payload["overall_score"] == 0.58
+    assert payload["risk_score"] == 0.42
+    assert payload["level"] == "developing"
     assert payload["dominant_causes"] == ["custom_lexical"]
     assert payload["summary"] == "custom lexical summary"
 

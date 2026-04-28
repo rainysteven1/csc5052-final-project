@@ -184,6 +184,7 @@ class RuntimeLLMClient:
         raw_response: str,
         schema_name: str,
         schema_json: str,
+        language: str | None = None,
     ) -> dict[str, Any] | None:
         logger.warning("[LLM] Attempting structured repair for malformed JSON output")
         repair_variables = {
@@ -199,6 +200,7 @@ class RuntimeLLMClient:
                         "json_repair_system",
                         variables=repair_variables,
                         config_path=self.config_path,
+                        language=language,
                     ),
                 },
                 {
@@ -207,6 +209,7 @@ class RuntimeLLMClient:
                         "json_repair_user",
                         variables=repair_variables,
                         config_path=self.config_path,
+                        language=language,
                     ),
                 },
             ],
@@ -222,6 +225,7 @@ class RuntimeLLMClient:
         user_prompt: str,
         repair_schema_name: str | None = None,
         repair_schema_json: str | None = None,
+        repair_language: str | None = None,
     ) -> dict[str, Any]:
         logger.info(f"[LLM] Calling {self.provider} model {self.model} for structured runtime output")
         content = self._create_completion(
@@ -242,6 +246,7 @@ class RuntimeLLMClient:
                 raw_response=content,
                 schema_name=repair_schema_name,
                 schema_json=repair_schema_json,
+                language=repair_language,
             )
             if repaired is not None:
                 return repaired

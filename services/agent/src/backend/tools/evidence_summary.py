@@ -38,6 +38,7 @@ def build_evidence_summary(state: AnalysisState) -> EvidenceSummary:
     lexical_scores: list[float] = []
     prosody_scores: list[float] = []
     disfluency_scores: list[float] = []
+    context_scores: list[float] = []
     trigger_count = 0
     disfluency_issue_count = 0
     lexical_counter: Counter[str] = Counter()
@@ -58,6 +59,7 @@ def build_evidence_summary(state: AnalysisState) -> EvidenceSummary:
         lexical_scores.append(lexical_score)
         prosody_scores.append(prosody_score)
         disfluency_scores.append(disfluency_score)
+        context_scores.append(float(segment.scores.context or 0.0))
 
         lexical_triggers = list(lexical.triggers) if lexical else []
         trigger_count += len(lexical_triggers)
@@ -107,6 +109,7 @@ def build_evidence_summary(state: AnalysisState) -> EvidenceSummary:
                     "lexical": segment.scores.lexical,
                     "prosody": segment.scores.prosody,
                     "disfluency": segment.scores.disfluency,
+                    "context": segment.scores.context,
                     "final": segment.scores.final,
                 },
                 lexical_triggers=lexical_triggers,
@@ -121,6 +124,7 @@ def build_evidence_summary(state: AnalysisState) -> EvidenceSummary:
         "lexical": _average_score(lexical_scores),
         "prosody": _average_score(prosody_scores),
         "disfluency": _average_score(disfluency_scores),
+        "context": _average_score(context_scores),
     }
 
     signal_overview: list[str] = []

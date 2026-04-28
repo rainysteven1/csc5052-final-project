@@ -417,7 +417,10 @@ def _build_report() -> Group:
             "Switch `SPEAKSURE_ASR_PROVIDER` to `local` or `grpc` when you want real ASR instead of stub output."
         )
     elif provider == "grpc" and asr_target_probe_level != "ok":
-        next_actions.append("Check `asr_grpc_target` or start the configured upstream ASR endpoint before sending real traffic.")
+        next_actions.append(
+            "Check `asr_grpc_target` or start the configured upstream "
+            "ASR endpoint before sending real traffic."
+        )
     if backend.backend == "grpc" and backend_target_probe_level != "ok":
         next_actions.append(
             "Check `asr_backend_grpc_target` or start the upstream ASR backend before using relay mode."

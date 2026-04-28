@@ -1,0 +1,23 @@
+[reasons]
+lexical = "contains uncertain wording such as {triggers}"
+prosody = "shows unstable pacing, pausing, or intonation"
+disfluency = "contains disfluency patterns such as {issue_types}"
+stable = "shows no obvious lexical, prosody, or disfluency issues."
+
+[practices]
+lexical = "Repeat the sentence three times after removing the hedge and enter the core point immediately"
+prosody = "Practice in short chunks, control pre-sentence pauses, and keep the pace stable sentence by sentence"
+disfluency = "Read the sentence once at a slower pace, then repeat it three times without fillers"
+stable = "Keep the current direct delivery and continue checking pacing and pauses."
+stable_steps = ["Keep the current direct delivery", "Continue checking pacing and pauses"]
+
+[join]
+prefix = "This segment "
+delimiter = ", and "
+suffix = "."
+practice_delimiter = "; "
+
+[focus_tags]
+lexical = "lexical"
+prosody = "prosody"
+disfluency = "disfluency"

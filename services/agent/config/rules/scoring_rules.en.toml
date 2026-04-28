@@ -1,0 +1,22 @@
+[default_weights]
+lexical = 0.4
+prosody = 0.3
+disfluency = 0.3
+context = 0.0
+
+[level_thresholds]
+high = 0.65
+medium = 0.35
+low_floor = 0.0
+
+[dominant_causes]
+lexical = "lexical_uncertainty"
+prosody = "prosody"
+disfluency = "disfluency"
+
+[summaries]
+lexical_only = "Clear lexical uncertainty is present, with some segments relying on hedging or vague wording."
+prosody_only = "Clear prosody risk is present, with instability in speaking rate, pausing, or contour."
+disfluency_only = "Clear disfluency risk is present, with fillers, repetition, or self-repairs in some segments."
+mixed = "Multi-dimensional risk is present, with room to improve wording, prosody, and fluency across segments."
+stable = "No obvious lexical, prosody, or disfluency risk is detected in the current run."

@@ -37,6 +37,7 @@ class SegmentScore(BaseModel):
     lexical: float | None = None
     prosody: float | None = None
     disfluency: float | None = None
+    context: float | None = None
     final: float | None = None
 
 
@@ -175,6 +176,7 @@ class JudgmentOutput(BaseModel):
     risk_segments: list[str] = Field(default_factory=list)
     strengths: list[str] = Field(default_factory=list)
     overall_score: float | None = None
+    risk_score: float | None = None
     level: str | None = None
     provider: str | None = None
     model: str | None = None
@@ -202,6 +204,7 @@ class AgentOutputs(BaseModel):
 class FinalAnalysisResult(BaseModel):
     status: str = "pending"
     overall_score: float | None = None
+    risk_score: float | None = None
     level: str | None = None
     dominant_causes: list[str] = Field(default_factory=list)
     summary: str | None = None

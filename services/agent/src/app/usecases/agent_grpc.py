@@ -68,6 +68,7 @@ def execute_analysis_via_grpc(
     output: Path,
     config_path: Path | None,
     transcript_override: str | None = None,
+    prompt_language_override: str | None = None,
     upload_wandb: bool = False,
 ) -> AnalysisExecutionResult:
     try:
@@ -77,6 +78,7 @@ def execute_analysis_via_grpc(
             scenario=scenario,
             output_path=output,
             transcript_override=transcript_override,
+            prompt_language_override=prompt_language_override,
             config_path=config_path,
             upload_wandb=upload_wandb,
         )
@@ -92,6 +94,8 @@ def execute_analysis_via_grpc(
         if payload
         else _build_state_from_digest(response, audio=audio, scenario=scenario)
     )
+    if prompt_language_override and "prompt_language_override" not in state.meta:
+        state.meta["prompt_language_override"] = prompt_language_override
     error = response.errors[0] if response.errors else None
     return AnalysisExecutionResult(
         state=state,

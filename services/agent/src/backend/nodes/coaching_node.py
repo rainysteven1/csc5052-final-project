@@ -17,6 +17,7 @@ from services.agent.src.backend.tools import (
     resolve_prompt_template_path,
     resolve_runtime_llm_config,
 )
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.logger import logger
 from services.agent.src.schemas.analysis import CoachingOutput, FeedbackOutput, SegmentFeedback
 from services.agent.src.services.artifact_loader import load_artifacts
@@ -33,6 +34,10 @@ def _dedupe(items: list[str]) -> list[str]:
         seen.add(cleaned)
         result.append(cleaned)
     return result
+
+
+def _resolve_runtime_language(state: AnalysisState) -> str:
+    return resolve_prompt_language(state.meta) or "zh"
 
 
 def _resolve_coaching_provider(
@@ -115,6 +120,7 @@ def apply_coaching(
     state: AnalysisState,
     config_path: str | Path | None = None,
 ) -> AnalysisState:
+    runtime_language = _resolve_runtime_language(state)
     # Always establish deterministic judgment and segment feedback first so the
     # coaching node can be the single synthesis stage while preserving fallback safety.
     state = synthesize_judgment(state, config_path=config_path, enable_llm=False)
@@ -144,16 +150,30 @@ def apply_coaching(
             "coaching_system",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         user_prompt = render_prompt_template(
             "coaching_user",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         if prompt_debug_enabled():
             state.meta.setdefault("llm_prompts", {})["coaching"] = {
-                "system_template_path": str(resolve_prompt_template_path("coaching_system", config_path=config_path)),
-                "user_template_path": str(resolve_prompt_template_path("coaching_user", config_path=config_path)),
+                "system_template_path": str(
+                    resolve_prompt_template_path(
+                        "coaching_system",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
+                "user_template_path": str(
+                    resolve_prompt_template_path(
+                        "coaching_user",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
             }
@@ -161,7 +181,12 @@ def apply_coaching(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             repair_schema_name="CoachingResult",
-            repair_schema_json=load_prompt_template("coaching_repair_schema", config_path=config_path),
+            repair_schema_json=load_prompt_template(
+                "coaching_repair_schema",
+                config_path=config_path,
+                language=runtime_language,
+            ),
+            repair_language=runtime_language,
         )
     except LLMClientError as exc:
         state.add_warning(f"Coaching LLM unavailable: {exc}")

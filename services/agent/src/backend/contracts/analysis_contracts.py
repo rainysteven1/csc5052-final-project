@@ -15,12 +15,14 @@ class SegmentFeatureMap(TypedDict):
 
 class ScorePayload(TypedDict):
     overall_score: float
+    risk_score: float
     level: str
     dominant_causes: list[str]
     summary: str
     lexical_average: float
     prosody_average: float
     disfluency_average: float
+    context_average: float
 
 
 class FeedbackSegmentPayload(TypedDict, total=False):
@@ -47,6 +49,7 @@ class JudgmentPayload(TypedDict, total=False):
     risk_segments: list[str]
     strengths: list[str]
     overall_score: float
+    risk_score: float
     level: str
     provider: str
     model: str

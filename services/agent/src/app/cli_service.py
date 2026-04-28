@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 from rich.table import Table
 
+from services.agent.bootstrap import REPO_ROOT, bootstrap_agent_runtime
 from services.agent.src.app.usecases import (
     build_samples_summary,
     discover_audio_files,
@@ -25,7 +26,6 @@ from services.agent.src.app.usecases import (
 )
 from services.agent.src.config import data_root
 from services.agent.src.console import console
-from services.agent.bootstrap import REPO_ROOT, bootstrap_agent_runtime
 
 app = typer.Typer(name="speaksure-runtime", add_completion=False, pretty_exceptions_show_locals=False)
 _REPO_ROOT = REPO_ROOT

@@ -50,6 +50,7 @@ def execute_analysis(
     output: Path,
     config_path: Path | None,
     transcript_override: str | None = None,
+    prompt_language_override: str | None = None,
     artifacts: ArtifactBundle | None = None,
     progress_callback: WorkflowProgressCallback | None = None,
 ) -> AnalysisExecutionResult:
@@ -61,6 +62,8 @@ def execute_analysis(
         progress_callback=progress_callback,
     )
     state = build_initial_state(audio_path=audio, scenario=scenario)
+    if prompt_language_override:
+        state.meta["prompt_language_override"] = prompt_language_override
 
     for warning in resolved_artifacts.warnings:
         state.add_warning(warning)

@@ -16,6 +16,7 @@ from services.agent.src.backend.tools import (
     resolve_runtime_llm_config,
 )
 from services.agent.src.backend.tools.rule_loader import DisfluencyRulesConfig, load_disfluency_rules
+from services.agent.src.language import normalize_runtime_language, resolve_prompt_language
 from services.agent.src.schemas.analysis import DisfluencyIssue, DisfluencyOutput, SegmentHighlight
 from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import AnalysisState
@@ -34,6 +35,10 @@ def _resolve_disfluency_provider(
     except Exception:
         return "rule"
     return str(artifacts.metadata.providers.get("disfluency", "rule")).strip().lower() or "rule"
+
+
+def _resolve_runtime_language(state: AnalysisState) -> str | None:
+    return resolve_prompt_language(state.meta)
 
 
 def _build_disfluency_prompt_variables(
@@ -62,6 +67,7 @@ def _apply_disfluency_llm_interpretation(
     *,
     config_path: str | Path | None = None,
 ) -> list[DisfluencyOutput]:
+    runtime_language = _resolve_runtime_language(state)
     llm_cfg = resolve_runtime_llm_config()
     if not llm_cfg.enabled:
         return outputs
@@ -95,16 +101,30 @@ def _apply_disfluency_llm_interpretation(
             "disfluency_system",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         user_prompt = render_prompt_template(
             "disfluency_user",
             variables=prompt_variables,
             config_path=config_path,
+            language=runtime_language,
         )
         if prompt_debug_enabled():
             state.meta.setdefault("llm_prompts", {}).setdefault("disfluency", {})[output.segment_id] = {
-                "system_template_path": str(resolve_prompt_template_path("disfluency_system", config_path=config_path)),
-                "user_template_path": str(resolve_prompt_template_path("disfluency_user", config_path=config_path)),
+                "system_template_path": str(
+                    resolve_prompt_template_path(
+                        "disfluency_system",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
+                "user_template_path": str(
+                    resolve_prompt_template_path(
+                        "disfluency_user",
+                        config_path=config_path,
+                        language=runtime_language,
+                    )
+                ),
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
             }
@@ -114,7 +134,12 @@ def _apply_disfluency_llm_interpretation(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 repair_schema_name="DisfluencyResult",
-                repair_schema_json=load_prompt_template("disfluency_repair_schema", config_path=config_path),
+                repair_schema_json=load_prompt_template(
+                    "disfluency_repair_schema",
+                    config_path=config_path,
+                    language=runtime_language,
+                ),
+                repair_language=runtime_language,
             )
         except LLMClientError as exc:
             state.add_warning(f"Disfluency interpretation fallback for {output.segment_id}: {exc}")
@@ -247,7 +272,8 @@ def analyze_disfluency(
     config_path: str | Path | None = None,
 ) -> AnalysisState:
     disfluency_provider = _resolve_disfluency_provider(state, config_path=config_path)
-    rules = load_disfluency_rules(config_path=config_path)
+    runtime_language = _resolve_runtime_language(state)
+    rules = load_disfluency_rules(config_path=config_path, language=runtime_language)
     outputs: list[DisfluencyOutput] = []
 
     for segment in state.segments:
