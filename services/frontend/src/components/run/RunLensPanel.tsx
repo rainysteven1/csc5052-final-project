@@ -51,9 +51,11 @@ export function RunLensPanel() {
       value: sourceValue,
       meta:
         mode === 'live'
-          ? audioFile
-            ? 'local upload ready'
-            : 'waiting for upload'
+          ? isFakeDeployment
+            ? 'driven by showcase catalog'
+            : audioFile
+              ? 'local upload ready'
+              : 'waiting for upload'
           : usingDemoReplay
             ? 'catalog preset selected'
             : 'JSON replay path',

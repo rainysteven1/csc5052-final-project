@@ -554,6 +554,33 @@ services/agent/data/demo_outputs/summary.md
 PYTHONPATH=. python -m pytest services/agent/tests -q
 ```
 
+如果只想跑轻量 CPU / no-model 测试：
+
+```bash
+PYTHONPATH=. python -m pytest services/agent/tests -q -m "not onnx and not hf_model"
+```
+
+CI 默认就是这条轻量测试路径，不会安装或执行：
+
+- ONNX / Whisper 运行时依赖
+- Hugging Face 大模型下载
+- 其他重资源模型测试
+- `grpcio-tools` 这类只在 proto 生成时需要的开发依赖
+
+后续如果新增重测试，请显式打 marker：
+
+- `@pytest.mark.onnx`
+- `@pytest.mark.hf_model`
+
+本地脚本也支持两种模式：
+
+```bash
+./scripts/check_agent.sh
+AGENT_CHECK_PROFILE=ci ./scripts/check_agent.sh
+```
+
+脚本会在启动时打印当前 profile 和 pytest marker 过滤条件，方便在 CI 日志里快速确认到底跑的是轻量集还是全量集。
+
 代码风格检查：
 
 ```bash

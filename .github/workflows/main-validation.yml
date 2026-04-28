@@ -84,6 +84,8 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Run agent checks
+        env:
+          AGENT_CHECK_PROFILE: ci
         run: ./scripts/check_agent.sh
 
   backend:
@@ -102,9 +104,9 @@ jobs:
           cache-dependency-path: services/backend/go/go.sum
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.59
+          version: v2.11
           working-directory: services/backend/go
           args: --config=../.golangci.yaml ./...
 
@@ -120,15 +122,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
           cache-dependency-path: services/fake-backend/pnpm-lock.yaml
-
-      - name: Enable Corepack
-        run: corepack enable
 
       - name: Run fake backend checks
         run: ./scripts/check_fake_backend.sh
@@ -142,15 +146,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
           cache-dependency-path: services/frontend/pnpm-lock.yaml
-
-      - name: Enable Corepack
-        run: corepack enable
 
       - name: Run frontend checks
         run: ./scripts/check_frontend.sh

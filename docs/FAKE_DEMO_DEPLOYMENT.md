@@ -87,8 +87,8 @@ Suggested deployment:
 
 1. create a Render Web Service from this repository
 2. set Root Directory to `services/fake-backend`
-3. set Build Command to `corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm run build`
-4. set Start Command to `corepack pnpm start`
+3. set Build Command to `pnpm install --frozen-lockfile --prod=false && pnpm run build`
+4. set Start Command to `node dist/index.js`
 5. optionally set `FAKE_STREAM_STEP_DELAY_MS=3000`
 6. optionally set `FAKE_STREAM_COACHING_DELAY_MS=10000`
 7. deploy and verify `GET /api/v1/health`

@@ -33,13 +33,13 @@ Recommended service root:
 Build command:
 
 ```bash
-corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm run build
+pnpm install --frozen-lockfile --prod=false && pnpm run build
 ```
 
 Start command:
 
 ```bash
-corepack pnpm start
+node dist/index.js
 ```
 
 Default environment variables:
@@ -61,8 +61,8 @@ Suggested setup:
 1. create a new Web Service
 2. connect the repository
 3. set Root Directory to `services/fake-backend`
-4. set Build Command to `corepack pnpm install --frozen-lockfile && corepack pnpm build`
-5. set Start Command to `corepack pnpm start`
+4. set Build Command to `pnpm install --frozen-lockfile --prod=false && pnpm run build`
+5. set Start Command to `node dist/index.js`
 6. deploy
 
 If Render is building with production-only dependencies, TypeScript will fail with missing `@types/node`. In that case, keep `--prod=false` in the build command and do not force `NODE_ENV=production` during install.
@@ -85,8 +85,8 @@ Suggested setup:
 
 1. create a new service from the repository
 2. set the service root to `services/fake-backend`
-3. use `corepack pnpm install --frozen-lockfile && corepack pnpm build` as the build command if Railway does not infer it
-4. use `corepack pnpm start` as the start command
+3. use `pnpm install --frozen-lockfile --prod=false && pnpm run build` as the build command if Railway does not infer it
+4. use `node dist/index.js` as the start command
 5. deploy
 
 Then verify the same endpoints:

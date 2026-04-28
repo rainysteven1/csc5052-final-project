@@ -18,6 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -25,14 +30,11 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: services/frontend/pnpm-lock.yaml
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Build frontend bundle
         working-directory: services/frontend
         run: |
-          corepack pnpm install --frozen-lockfile
-          corepack pnpm build
+          pnpm install --frozen-lockfile
+          pnpm build
 
       - name: Prepare release artifacts
         env:

@@ -102,7 +102,7 @@ Before tagging a release, confirm:
 - `just run-frontend` starts successfully
 - replay mode loads `/tmp/speaksure-one-round/en_test_0315.presentation.json`
 - routed URLs work correctly
-- `npm run build` succeeds inside `services/frontend`
+- `pnpm build` succeeds inside `services/frontend`
 - the version in `services/agent/pyproject.toml` matches the tag you plan to push
 - backend runtime files are written under `services/backend/data/`
 

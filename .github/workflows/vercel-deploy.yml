@@ -32,15 +32,17 @@ jobs:
           initial-status: in_progress
           description: Deploy services/frontend to Vercel
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
           cache-dependency-path: services/frontend/pnpm-lock.yaml
-
-      - name: Enable Corepack
-        run: corepack enable
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

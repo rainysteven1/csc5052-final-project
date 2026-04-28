@@ -26,7 +26,7 @@ All demo copy and replay content comes from files under `data/`.
 
 ```bash
 cd services/fake-backend
-corepack pnpm install
+pnpm install
 ```
 
 Then run:
@@ -43,7 +43,7 @@ If you want file-watch mode instead of the stable single-process dev server:
 
 ```bash
 cd services/fake-backend
-corepack pnpm dev:watch
+pnpm dev:watch
 ```
 
 Then start the frontend against it:
@@ -79,7 +79,7 @@ Use a Node host that supports long-lived HTTP connections, because the live demo
 On Render, use a build command that installs dev dependencies for TypeScript compilation:
 
 ```bash
-corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm run build
+pnpm install --frozen-lockfile --prod=false && pnpm run build
 ```
 
 If you want a GitHub-triggered Render deploy, configure:

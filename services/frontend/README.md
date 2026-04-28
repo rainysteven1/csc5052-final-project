@@ -115,10 +115,14 @@ If the frontend is deployed separately from the backend, set an absolute API bas
 export VITE_API_BASE_URL=https://your-backend.example.com
 ```
 
-For Vercel deployment:
+For the recommended public-demo deployment:
 
 - `services/frontend/vercel.json` already includes SPA rewrites
-- set `VITE_API_BASE_URL` in the project settings if the backend is hosted elsewhere
+- deploy `services/fake-backend` separately to Render
+- set `VITE_API_BASE_URL=https://your-fake-backend.onrender.com` in the Vercel project settings
+- `.github/workflows/vercel-deploy.yml` can deploy `services/frontend` from GitHub Actions
+- the deployed site URL is published back to GitHub Deployments under `vercel-production`
+- set `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` in GitHub repository secrets
 
 ## Replay Mode
 
