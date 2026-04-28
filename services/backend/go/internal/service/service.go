@@ -63,10 +63,6 @@ func (s *AnalysisService) SerializeJobWithContext(ctx context.Context, job model
 	return data
 }
 
-func (s *AnalysisService) logJob(job models.AnalysisJob) *logrus.Entry {
-	return s.logJobWithContext(context.Background(), job)
-}
-
 func (s *AnalysisService) logJobWithContext(ctx context.Context, job models.AnalysisJob) *logrus.Entry {
 	return s.logger.WithFields(logrus.Fields{
 		"kind":         "analysis_job",
@@ -83,7 +79,7 @@ func (s *AnalysisService) loggerFromContext(ctx context.Context) logrus.FieldLog
 	return s.logger.WithFields(logging.FieldsFromContext(ctx))
 }
 
-func intPtr(value int) *int { return &value }
+func intPtr(value int) *int          { return &value }
 func stringPtr(value string) *string { return &value }
 func optionalString(value *string) string {
 	if value == nil {

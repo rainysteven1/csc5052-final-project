@@ -12,7 +12,7 @@ import (
 )
 
 func (s *AnalysisService) LoadReplay(path string) (*models.ReplayLoadResponse, error) {
-	return s.LoadReplayWithContext(nil, path)
+	return s.LoadReplayWithContext(context.TODO(), path)
 }
 
 func (s *AnalysisService) LoadReplayWithContext(ctx context.Context, path string) (*models.ReplayLoadResponse, error) {
@@ -36,7 +36,7 @@ func (s *AnalysisService) LoadReplayWithContext(ctx context.Context, path string
 }
 
 func (s *AnalysisService) ReadResult(job models.AnalysisJob) (map[string]any, error) {
-	return s.ReadResultWithContext(nil, job)
+	return s.ReadResultWithContext(context.TODO(), job)
 }
 
 func (s *AnalysisService) ReadResultWithContext(ctx context.Context, job models.AnalysisJob) (map[string]any, error) {

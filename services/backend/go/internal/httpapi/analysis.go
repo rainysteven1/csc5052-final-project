@@ -49,7 +49,9 @@ func (api *API) submitAnalysis(c *gin.Context) {
 		api.writeError(c, http.StatusBadRequest, codeAudioOpenFailed, err.Error(), err)
 		return
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 	data, err := io.ReadAll(src)
 	if err != nil {
 		api.writeError(c, http.StatusBadRequest, codeAudioReadFailed, err.Error(), err)
