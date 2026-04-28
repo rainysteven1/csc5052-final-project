@@ -1,0 +1,64 @@
+[[rules]]
+phrase = "i think"
+weight = 0.24
+explanation = "出现弱承诺表达，陈述显得不够直接。"
+
+[[rules]]
+phrase = "maybe"
+weight = 0.22
+explanation = "出现模糊词，降低了表达确定性。"
+
+[[rules]]
+phrase = "probably"
+weight = 0.22
+explanation = "出现概率化措辞，表达偏保守。"
+
+[[rules]]
+phrase = "i guess"
+weight = 0.24
+explanation = "出现猜测式表达，显得不够肯定。"
+
+[[rules]]
+phrase = "kind of"
+weight = 0.18
+explanation = "出现弱化短语，削弱了表达力度。"
+
+[[rules]]
+phrase = "sort of"
+weight = 0.18
+explanation = "出现弱化短语，削弱了表达力度。"
+
+[[rules]]
+phrase = "not sure"
+weight = 0.30
+explanation = "直接表达不确定，会显著拉低置信感。"
+
+[[rules]]
+phrase = "try to"
+weight = 0.14
+explanation = "表达目标偏保守，承诺力度不足。"
+
+[[rules]]
+phrase = "可能"
+weight = 0.22
+explanation = "出现模糊词，降低了表达确定性。"
+
+[[rules]]
+phrase = "也许"
+weight = 0.22
+explanation = "出现模糊词，降低了表达确定性。"
+
+[[rules]]
+phrase = "大概"
+weight = 0.20
+explanation = "出现模糊词，表述偏保守。"
+
+[[rules]]
+phrase = "我觉得"
+weight = 0.24
+explanation = "出现主观弱承诺表达，显得不够直接。"
+
+[[rules]]
+phrase = "应该"
+weight = 0.18
+explanation = "出现推测式措辞，确定性有所下降。"

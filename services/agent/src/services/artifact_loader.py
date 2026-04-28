@@ -20,7 +20,6 @@ class ArtifactBundle(BaseModel):
 
 DEFAULT_AGENT_GRPC_BIND = "127.0.0.1:50051"
 DEFAULT_ASR_GRPC_BIND = "127.0.0.1:50052"
-DEFAULT_AGENT_HTTP_BIND = "127.0.0.1:8000"
 RUNTIME_ENV_MAP = {
     "asr_provider": "SPEAKSURE_ASR_PROVIDER",
 }
@@ -80,6 +79,7 @@ def load_artifacts(
         "prosody": str(merged.get("prosody_provider", "rule")),
         "disfluency": str(merged.get("disfluency_provider", "rule")),
         "context": str(merged.get("context_provider", "config")),
+        "coaching": str(merged.get("coaching_provider", "disabled")),
     }
     paths = {
         key: str(value)
@@ -151,10 +151,3 @@ def resolve_asr_grpc_bind(config_path: str | Path | None = None) -> str:
         config_path=config_path,
     )
 
-
-def resolve_agent_http_bind(config_path: str | Path | None = None) -> str:
-    return resolve_runtime_path_setting(
-        "agent_http_bind",
-        default=DEFAULT_AGENT_HTTP_BIND,
-        config_path=config_path,
-    )

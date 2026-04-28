@@ -1,0 +1,16 @@
+{
+  "summary": "整体最需要优先稳定节奏和减少模糊表达。",
+  "coaching_focus": ["优先稳定语速和停顿", "减少弱承诺表达"],
+  "strengths": ["整体表达仍然可懂"],
+  "segments": [
+    {
+      "segment_id": "seg_001",
+      "severity": "medium",
+      "focus_tags": ["prosody", "lexical"],
+      "reason": "该句节奏偏慢且存在模糊缓冲词。",
+      "rewrite": "直接给出结论，并保持一句话说完整。",
+      "practice": "删掉缓冲词后做 3 次直接复述。",
+      "practice_steps": ["先删掉模糊词", "控制句前长停顿", "完整复述 3 次"]
+    }
+  ]
+}

@@ -39,8 +39,8 @@ Run page:
 Pipeline page:
 
 - `/pipeline?view=overview&node=asr`
-- `/pipeline?view=spotlight&node=reasoning`
-- `/pipeline?view=timeline&node=feedback&frame=3`
+- `/pipeline?view=spotlight&node=coaching`
+- `/pipeline?view=timeline&node=coaching&frame=3`
 
 Results page:
 
@@ -72,7 +72,7 @@ git push origin v0.1.0
 
 Important rule:
 
-- the tag must match the version in `pyproject.toml`
+- the tag must match the version in `services/agent/pyproject.toml`
 
 Artifacts produced by the workflow:
 
@@ -87,9 +87,9 @@ The release workflow prepares a submission bundle containing:
 
 - repository root `README.md`
 - `services/agent/README.md`
-- `services/agent/frontend/README.md`
+- `services/frontend/README.md`
 - this guide
-- `pyproject.toml`
+- `services/agent/pyproject.toml`
 - frontend `package.json`
 - built frontend files under `frontend-dist/`
 - generated deployment notes
@@ -102,8 +102,9 @@ Before tagging a release, confirm:
 - `just run-frontend` starts successfully
 - replay mode loads `/tmp/speaksure-one-round/en_test_0315.presentation.json`
 - routed URLs work correctly
-- `npm run build` succeeds inside `services/agent/frontend`
-- the version in `pyproject.toml` matches the tag you plan to push
+- `npm run build` succeeds inside `services/frontend`
+- the version in `services/agent/pyproject.toml` matches the tag you plan to push
+- backend runtime files are written under `services/backend/data/`
 
 ## 7. Suggested Short Demo Script
 
@@ -114,3 +115,8 @@ A compact demo script for presentation:
 3. “This is the `Results` workspace for scoring, feedback, and segment review.”
 4. “This is the `Debug` workspace for metadata and raw payload inspection.”
 5. “A tagged release bundles the source, built frontend, and submission material together.”
+
+
+Current architecture reference:
+
+- `docs/CURRENT_ARCHITECTURE.md`

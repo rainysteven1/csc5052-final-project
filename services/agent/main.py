@@ -12,7 +12,7 @@ if repo_root_str not in sys.path:
     sys.path.insert(0, repo_root_str)
 
 from services.agent.src.app.service_runner import run_agent_grpc_server
-from services.bootstrap import bootstrap_agent_runtime
+from services.agent.bootstrap import bootstrap_agent_runtime
 
 
 if __name__ == "__main__":

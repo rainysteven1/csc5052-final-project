@@ -1,0 +1,466 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --border: 24 28% 78%;
+    --input: 24 28% 78%;
+    --ring: 14 76% 50%;
+    --background: 36 43% 95%;
+    --foreground: 24 20% 14%;
+    --primary: 14 76% 50%;
+    --primary-foreground: 30 100% 98%;
+    --secondary: 40 40% 88%;
+    --secondary-foreground: 22 20% 20%;
+    --muted: 38 32% 90%;
+    --muted-foreground: 24 12% 38%;
+    --accent: 165 43% 36%;
+    --accent-foreground: 36 43% 97%;
+    --card: 36 43% 97%;
+    --card-foreground: 24 20% 14%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 30 100% 98%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(239, 119, 76, 0.18), transparent 26%),
+      radial-gradient(circle at bottom right, rgba(72, 146, 127, 0.16), transparent 24%),
+      linear-gradient(160deg, #faf4ec 0%, #f4eadf 52%, #f8f0e4 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(239, 119, 76, 0.22), transparent 35%),
+      radial-gradient(circle at 80% 10%, rgba(72, 146, 127, 0.18), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(247, 236, 222, 0.95));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(48, 39, 33, 0.96), rgba(74, 55, 47, 0.94), rgba(142, 91, 53, 0.88));
+    --shadow-panel: 0 18px 60px rgba(120, 74, 35, 0.10);
+    --shadow-soft: 0 12px 32px rgba(112, 75, 40, 0.09);
+    --glass-soft-bg: rgba(255, 255, 255, 0.70);
+    --glass-soft-border: rgba(255, 255, 255, 0.70);
+    --glass-strong-bg: rgba(255, 255, 255, 0.80);
+    --glass-strong-border: rgba(255, 255, 255, 0.65);
+    --glass-chip-soft-bg: rgba(255, 255, 255, 0.70);
+    --glass-chip-strong-bg: rgba(255, 255, 255, 0.75);
+    --glass-chip-inverse-bg: rgba(255, 255, 255, 0.15);
+    --glass-badge-inverse-border: rgba(255, 255, 255, 0.30);
+    --glass-badge-inverse-bg: rgba(255, 255, 255, 0.15);
+    --console-pill-soft-border: rgba(255, 255, 255, 0.70);
+    --console-pill-soft-bg: rgba(255, 255, 255, 0.80);
+    --console-pill-muted-bg: rgba(255, 255, 255, 0.65);
+    --surface-background-alpha: 0.72;
+    --surface-background-hover-alpha: 0.95;
+    --surface-dashed-alpha: 0.55;
+    --secondary-surface-alpha: 0.35;
+    --secondary-block-alpha: 0.50;
+    --secondary-panel-alpha: 0.35;
+    --accent-soft-alpha: 0.10;
+  }
+
+  :root[data-theme="newsroom"] {
+    --border: 30 18% 78%;
+    --input: 30 18% 78%;
+    --ring: 10 45% 43%;
+    --background: 42 26% 95%;
+    --foreground: 216 15% 17%;
+    --primary: 10 45% 43%;
+    --primary-foreground: 42 40% 98%;
+    --secondary: 38 22% 88%;
+    --secondary-foreground: 216 15% 17%;
+    --muted: 40 18% 90%;
+    --muted-foreground: 214 10% 38%;
+    --accent: 201 30% 37%;
+    --accent-foreground: 42 40% 98%;
+    --card: 42 26% 97%;
+    --card-foreground: 216 15% 17%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(158, 79, 59, 0.10), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(63, 97, 116, 0.12), transparent 22%),
+      linear-gradient(160deg, #f7f3ed 0%, #f0ebe2 54%, #f5efe7 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(158, 79, 59, 0.14), transparent 34%),
+      radial-gradient(circle at 78% 10%, rgba(63, 97, 116, 0.12), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(243, 238, 230, 0.96));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(34, 42, 49, 0.96), rgba(63, 97, 116, 0.92), rgba(118, 110, 102, 0.90));
+    --shadow-panel: 0 18px 60px rgba(72, 66, 59, 0.08);
+    --shadow-soft: 0 12px 32px rgba(72, 66, 59, 0.07);
+  }
+
+  :root[data-theme="harbor"] {
+    --border: 205 18% 78%;
+    --input: 205 18% 78%;
+    --ring: 196 43% 38%;
+    --background: 197 30% 95%;
+    --foreground: 209 20% 18%;
+    --primary: 196 43% 38%;
+    --primary-foreground: 190 30% 98%;
+    --secondary: 192 24% 88%;
+    --secondary-foreground: 209 20% 18%;
+    --muted: 198 18% 91%;
+    --muted-foreground: 207 10% 39%;
+    --accent: 170 21% 42%;
+    --accent-foreground: 190 30% 98%;
+    --card: 197 30% 97%;
+    --card-foreground: 209 20% 18%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(53, 110, 127, 0.14), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(108, 141, 138, 0.15), transparent 24%),
+      linear-gradient(160deg, #f1f6f6 0%, #eaf1f2 54%, #eef4f5 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(53, 110, 127, 0.16), transparent 34%),
+      radial-gradient(circle at 78% 10%, rgba(108, 141, 138, 0.14), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(233, 240, 242, 0.96));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(41, 62, 74, 0.96), rgba(53, 110, 127, 0.92), rgba(108, 141, 138, 0.90));
+    --shadow-panel: 0 18px 60px rgba(51, 78, 92, 0.09);
+    --shadow-soft: 0 12px 32px rgba(51, 78, 92, 0.08);
+  }
+
+  :root[data-theme="linen"] {
+    --border: 38 20% 79%;
+    --input: 38 20% 79%;
+    --ring: 32 39% 39%;
+    --background: 40 38% 94%;
+    --foreground: 34 12% 18%;
+    --primary: 32 39% 39%;
+    --primary-foreground: 42 40% 98%;
+    --secondary: 42 28% 88%;
+    --secondary-foreground: 34 12% 18%;
+    --muted: 42 22% 90%;
+    --muted-foreground: 38 10% 39%;
+    --accent: 84 19% 38%;
+    --accent-foreground: 42 40% 98%;
+    --card: 40 38% 97%;
+    --card-foreground: 34 12% 18%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(127, 90, 55, 0.12), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(102, 117, 78, 0.12), transparent 23%),
+      linear-gradient(160deg, #faf6ee 0%, #f3ede1 56%, #f7f2e9 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(127, 90, 55, 0.14), transparent 34%),
+      radial-gradient(circle at 78% 10%, rgba(102, 117, 78, 0.12), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 239, 228, 0.97));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(71, 60, 47, 0.96), rgba(127, 90, 55, 0.91), rgba(102, 117, 78, 0.88));
+    --shadow-panel: 0 18px 60px rgba(88, 75, 55, 0.08);
+    --shadow-soft: 0 12px 32px rgba(88, 75, 55, 0.07);
+  }
+
+  :root[data-theme="slate"] {
+    --border: 214 18% 80%;
+    --input: 214 18% 80%;
+    --ring: 210 22% 38%;
+    --background: 212 32% 95%;
+    --foreground: 214 18% 18%;
+    --primary: 210 22% 38%;
+    --primary-foreground: 210 28% 98%;
+    --secondary: 213 22% 89%;
+    --secondary-foreground: 214 18% 18%;
+    --muted: 214 18% 91%;
+    --muted-foreground: 214 10% 40%;
+    --accent: 214 17% 48%;
+    --accent-foreground: 210 28% 98%;
+    --card: 212 32% 97%;
+    --card-foreground: 214 18% 18%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(65, 82, 102, 0.12), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(98, 116, 138, 0.10), transparent 22%),
+      linear-gradient(160deg, #f5f7fa 0%, #edf1f5 55%, #f6f8fb 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(65, 82, 102, 0.14), transparent 34%),
+      radial-gradient(circle at 78% 10%, rgba(98, 116, 138, 0.10), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(238, 242, 247, 0.97));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(37, 46, 58, 0.97), rgba(65, 82, 102, 0.93), rgba(98, 116, 138, 0.90));
+    --shadow-panel: 0 18px 60px rgba(52, 63, 77, 0.08);
+    --shadow-soft: 0 12px 32px rgba(52, 63, 77, 0.07);
+  }
+
+  :root[data-theme="ivory"] {
+    --border: 36 24% 80%;
+    --input: 36 24% 80%;
+    --ring: 34 36% 40%;
+    --background: 42 34% 95%;
+    --foreground: 30 14% 18%;
+    --primary: 34 36% 40%;
+    --primary-foreground: 42 40% 98%;
+    --secondary: 38 26% 89%;
+    --secondary-foreground: 30 14% 18%;
+    --muted: 40 22% 91%;
+    --muted-foreground: 34 10% 40%;
+    --accent: 32 15% 52%;
+    --accent-foreground: 42 40% 98%;
+    --card: 42 34% 97%;
+    --card-foreground: 30 14% 18%;
+    --app-background-image:
+      radial-gradient(circle at top left, rgba(138, 103, 63, 0.10), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(138, 132, 118, 0.10), transparent 23%),
+      linear-gradient(160deg, #faf7f0 0%, #f4efe4 56%, #faf6ee 100%);
+    --hero-glow:
+      radial-gradient(circle at top left, rgba(138, 103, 63, 0.11), transparent 34%),
+      radial-gradient(circle at 78% 10%, rgba(138, 132, 118, 0.10), transparent 28%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(246, 241, 231, 0.97));
+    --brand-gradient:
+      linear-gradient(145deg, rgba(73, 60, 45, 0.96), rgba(138, 103, 63, 0.89), rgba(182, 162, 132, 0.84));
+    --shadow-panel: 0 18px 60px rgba(94, 77, 57, 0.07);
+    --shadow-soft: 0 12px 32px rgba(94, 77, 57, 0.06);
+  }
+
+  :root[data-surface="soft"] {
+    --glass-soft-bg: rgba(255, 255, 255, 0.62);
+    --glass-soft-border: rgba(255, 255, 255, 0.68);
+    --glass-strong-bg: rgba(255, 255, 255, 0.72);
+    --glass-strong-border: rgba(255, 255, 255, 0.62);
+    --glass-chip-soft-bg: rgba(255, 255, 255, 0.62);
+    --glass-chip-strong-bg: rgba(255, 255, 255, 0.69);
+    --console-pill-soft-bg: rgba(255, 255, 255, 0.72);
+    --surface-background-alpha: 0.64;
+    --surface-background-hover-alpha: 0.90;
+    --surface-dashed-alpha: 0.48;
+    --secondary-surface-alpha: 0.28;
+    --secondary-block-alpha: 0.42;
+    --secondary-panel-alpha: 0.28;
+    --accent-soft-alpha: 0.08;
+  }
+
+  :root[data-surface="crisp"] {
+    --glass-soft-bg: rgba(255, 255, 255, 0.82);
+    --glass-soft-border: rgba(255, 255, 255, 0.78);
+    --glass-strong-bg: rgba(255, 255, 255, 0.90);
+    --glass-strong-border: rgba(255, 255, 255, 0.74);
+    --glass-chip-soft-bg: rgba(255, 255, 255, 0.78);
+    --glass-chip-strong-bg: rgba(255, 255, 255, 0.84);
+    --console-pill-soft-bg: rgba(255, 255, 255, 0.88);
+    --surface-background-alpha: 0.82;
+    --surface-background-hover-alpha: 0.98;
+    --surface-dashed-alpha: 0.66;
+    --secondary-surface-alpha: 0.42;
+    --secondary-block-alpha: 0.56;
+    --secondary-panel-alpha: 0.42;
+    --accent-soft-alpha: 0.14;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
+    background-image: var(--app-background-image);
+    transition:
+      background-image 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease;
+  }
+
+  code,
+  pre {
+    font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+  }
+}
+
+@layer utilities {
+  .content-scroll {
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .scroll-stable {
+    scrollbar-gutter: stable;
+  }
+
+  .panel-block {
+    @apply rounded-[24px] border p-4;
+    background-color: hsl(var(--background) / var(--surface-background-alpha));
+  }
+
+  .console-surface {
+    @apply rounded-[24px] border;
+    background-color: hsl(var(--background) / var(--surface-background-alpha));
+  }
+
+  .console-surface-subtle {
+    @apply rounded-[24px] border;
+    background-color: hsl(var(--secondary) / var(--secondary-surface-alpha));
+  }
+
+  .console-surface-dashed {
+    @apply rounded-[24px] border border-dashed;
+    background-color: hsl(var(--background) / var(--surface-dashed-alpha));
+  }
+
+  .console-stat-surface {
+    @apply rounded-[22px] px-4 py-3;
+    background-color: var(--glass-soft-bg);
+    border: 1px solid var(--glass-soft-border);
+  }
+
+  .console-selectable {
+    @apply console-surface w-full text-left transition-all;
+    box-shadow: 0 6px 18px rgba(24, 20, 16, 0.04);
+  }
+
+  .console-selectable:hover {
+    background-color: hsl(var(--background) / var(--surface-background-hover-alpha));
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+  }
+
+  .console-selectable-active {
+    @apply border-primary ring-2 ring-primary/20;
+    background-color: hsl(var(--background) / 0.98);
+    box-shadow:
+      0 14px 34px rgba(24, 20, 16, 0.08),
+      0 0 0 1px hsl(var(--primary) / 0.06);
+  }
+
+  .console-index-header {
+    @apply rounded-[18px] border px-4 py-3;
+    background-color: hsl(var(--background) / 0.95);
+    box-shadow: 0 8px 22px rgba(24, 20, 16, 0.05);
+  }
+
+  .console-index-stat {
+    @apply rounded-[14px] px-3 py-2 text-left;
+    background-color: hsl(var(--secondary) / calc(var(--secondary-surface-alpha) + 0.08));
+    border: 1px solid hsl(var(--border) / 0.72);
+  }
+
+  .console-index-label {
+    @apply text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .console-index-value {
+    @apply mt-1 text-sm font-medium leading-5;
+  }
+
+  .console-hero-panel {
+    @apply rounded-[28px] glass-panel-soft p-5;
+  }
+
+  .console-tab-shell {
+    @apply rounded-[24px] glass-panel-soft p-2;
+  }
+
+  .console-tab-idle {
+    @apply glass-panel-strong;
+  }
+
+  .console-nav-card {
+    @apply relative overflow-hidden rounded-[22px] border px-3.5 py-3 transition-all;
+  }
+
+  .console-nav-card-active {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .console-nav-card-idle {
+    @apply text-foreground;
+    background-color: var(--glass-soft-bg);
+    border: 1px solid var(--glass-soft-border);
+  }
+
+  .console-nav-card-idle:hover {
+    background-color: hsl(var(--secondary) / 0.70);
+  }
+
+  .console-nav-marker {
+    @apply absolute inset-y-3 left-0 w-1.5 rounded-r-full bg-white/90;
+  }
+
+  .ui-label-sm {
+    @apply text-[11px] uppercase tracking-[0.22em];
+  }
+
+  .ui-label-xs {
+    @apply text-[10px] uppercase tracking-[0.18em];
+  }
+
+  .console-chip-soft {
+    background-color: var(--glass-chip-soft-bg);
+  }
+
+  .console-block-soft {
+    @apply rounded-2xl px-3 py-2;
+    background-color: hsl(var(--secondary) / var(--secondary-block-alpha));
+  }
+
+  .console-panel-soft {
+    @apply rounded-[18px] p-3;
+    background-color: hsl(var(--secondary) / var(--secondary-panel-alpha));
+  }
+
+  .glass-panel-soft {
+    border: 1px solid var(--glass-soft-border);
+    background-color: var(--glass-soft-bg);
+  }
+
+  .glass-panel-strong {
+    border: 1px solid var(--glass-strong-border);
+    background-color: var(--glass-strong-bg);
+  }
+
+  .glass-chip-soft {
+    background-color: var(--glass-chip-soft-bg);
+  }
+
+  .glass-chip-strong {
+    background-color: var(--glass-chip-strong-bg);
+  }
+
+  .glass-chip-inverse {
+    background-color: var(--glass-chip-inverse-bg);
+  }
+
+  .glass-badge-inverse {
+    border: 1px solid var(--glass-badge-inverse-border);
+    background-color: var(--glass-badge-inverse-bg);
+  }
+
+  .console-pill-soft {
+    @apply rounded-full border;
+    border-color: var(--console-pill-soft-border);
+    background-color: var(--console-pill-soft-bg);
+  }
+
+  .console-pill-muted {
+    @apply rounded-full border border-border/70;
+    background-color: var(--console-pill-muted-bg);
+  }
+
+  .debug-surface {
+    @apply rounded-[24px] border border-stone-300/70 bg-stone-50;
+  }
+
+  .debug-surface-strong {
+    @apply rounded-[24px] border border-stone-800 bg-stone-950;
+  }
+
+  .tone-accent-soft {
+    background-color: hsl(var(--accent) / var(--accent-soft-alpha));
+  }
+
+  .tone-secondary-soft {
+    background-color: hsl(var(--secondary) / 0.45);
+  }
+
+  .tone-secondary-muted {
+    background-color: hsl(var(--secondary) / 0.35);
+  }
+
+  .brand-gradient-panel {
+    background-image: var(--brand-gradient);
+  }
+}

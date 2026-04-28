@@ -13,53 +13,39 @@ init-env:
     fi
 
 doctor:
-    UV_CACHE_DIR=.cache/uvtmp uv run python -m services.agent.src.app.doctor
+    python -m services.agent.src.app.doctor
 
 doctor-live interval="2":
-    UV_CACHE_DIR=.cache/uvtmp uv run python -m services.agent.src.app.doctor --watch --interval {{ interval }}
+    python -m services.agent.src.app.doctor --watch --interval {{ interval }}
 
 sync-dev:
-    UV_CACHE_DIR=.cache/uvtmp uv sync --group dev --group proto --group agent_http --group asr_runtime
+    cd services/agent && UV_CACHE_DIR=../../.cache/uvtmp uv sync --group runtime --group dev --group proto
 
-sync-monolith:
-    UV_CACHE_DIR=.cache/uvtmp uv pip install --python `command -v python` --group monolith_overlay
-
-doctor-monolith:
+doctor-local:
     SPEAKSURE_ASR_PROVIDER=local python -m services.agent.src.app.doctor
 
 proto-gen:
-    UV_CACHE_DIR=.cache/uvtmp uv run python services/generate_proto.py
-
-run-asr-grpc:
-    UV_CACHE_DIR=.cache/uvtmp uv run python services/asr/main.py
+    ./services/agent/scripts/generate_proto.sh
 
 run-agent-grpc asr_mode="local":
-    SPEAKSURE_ASR_PROVIDER={{ asr_mode }} UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/main.py
+    SPEAKSURE_ASR_PROVIDER={{ asr_mode }} python services/agent/main.py
 
-run-agent-http asr_mode="local":
-    SPEAKSURE_ASR_PROVIDER={{ asr_mode }} UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/http_main.py
 
-run-backend-monolith:
-    SPEAKSURE_ASR_PROVIDER=local python services/agent/http_main.py
 
 run-backend:
-    SPEAKSURE_ASR_PROVIDER=local python services/agent/http_main.py
-
-run-backend-grpc:
-    @echo "Start ASR first with: just run-asr-grpc"
-    SPEAKSURE_ASR_PROVIDER=grpc UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/http_main.py
+    cd services/backend/go && SPEAKSURE_ASR_PROVIDER=local go run ./cmd/server
 
 run-frontend:
-    cd services/agent/frontend && npm run dev
+    cd services/frontend && npm run dev
 
 analyze *args:
-    UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/cli.py analyze {{ args }}
+    python services/agent/cli.py analyze {{ args }}
 
 analyze-samples *args:
-    UV_CACHE_DIR=.cache/uvtmp uv run python services/agent/cli.py analyze-samples {{ args }}
+    python services/agent/cli.py analyze-samples {{ args }}
 
 lint:
-    UV_CACHE_DIR=.cache/uvtmp uv run ruff check services/agent/cli.py services/agent/tests services/agent services/asr
+    cd services/agent && UV_CACHE_DIR=../../.cache/uvtmp uv run ruff check cli.py main.py backend_bridge.py bootstrap.py src tests
 
 test:
-    UV_CACHE_DIR=.cache/uvtmp uv run pytest services/agent/tests -q
+    PYTHONPATH=. python -m pytest services/agent/tests -q

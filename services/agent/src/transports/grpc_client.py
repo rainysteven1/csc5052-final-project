@@ -9,7 +9,7 @@ try:
 except ImportError:  # pragma: no cover - dependency wiring
     grpc = None
 
-from services.gen.speaksure.v1 import agent_service_pb2, agent_service_pb2_grpc
+from services.agent.gen.speaksure.v1 import agent_service_pb2, agent_service_pb2_grpc
 
 
 class AgentGrpcError(RuntimeError):

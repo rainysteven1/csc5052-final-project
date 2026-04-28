@@ -16,17 +16,17 @@ from services.agent.src.orchestration.contracts import (
     WorkflowGraphState,
 )
 from services.agent.src.schemas.analysis import ContextOutput
-from services.agent.src.services.agent.nodes.context_node import apply_context
-from services.agent.src.services.agent.nodes.disfluency_node import analyze_disfluency
-from services.agent.src.services.agent.nodes.feedback_node import apply_feedback
-from services.agent.src.services.agent.nodes.lexical_node import analyze_lexical_uncertainty
-from services.agent.src.services.agent.nodes.prosody_node import analyze_prosody
-from services.agent.src.services.agent.nodes.reasoning_node import apply_reasoning
-from services.agent.src.services.agent.nodes.segmentation_node import segment_transcript
+from services.agent.src.backend.nodes.context_node import apply_context
+from services.agent.src.backend.nodes.disfluency_node import analyze_disfluency
+from services.agent.src.backend.nodes.coaching_node import apply_coaching
+from services.agent.src.backend.nodes.lexical_node import analyze_lexical_uncertainty
+from services.agent.src.backend.nodes.prosody_node import analyze_prosody
+from services.agent.src.backend.nodes.segmentation_node import segment_transcript
+from services.agent.src.asr.runtime import transcribe_audio
 from services.agent.src.services.artifact_loader import ArtifactBundle
+from services.agent.src.backend.tools.evidence_summary import build_evidence_summary
 from services.agent.src.services.audio_preprocess import preprocess_audio
 from services.agent.src.state import AnalysisState
-from services.asr.src.service import transcribe_audio
 
 
 def _jsonify(value: Any) -> Any:
@@ -74,6 +74,31 @@ def _emit_progress(
 
 def _build_state_snapshot(state: AnalysisState) -> dict[str, Any]:
     return state.model_dump(mode="json")
+
+
+def _emit_substep_progress(
+    progress_callback: WorkflowProgressCallback | None,
+    *,
+    phase: str,
+    substep: str,
+    step_index: int,
+    total_steps: int,
+    status: str,
+    state: AnalysisState,
+    event_type: str,
+) -> None:
+    _emit_progress(
+        progress_callback,
+        event_type=event_type,
+        step=phase,
+        step_index=step_index,
+        total_steps=total_steps,
+        status=status,
+        payload={
+            "substep": substep,
+            "state": _build_state_snapshot(state),
+        },
+    )
 
 
 def _raise_workflow_error(
@@ -197,8 +222,88 @@ def prepare_input_node(state: AnalysisState) -> AnalysisState:
     return preprocess_audio(state)
 
 
-def lexical_branch_node(state: AnalysisState) -> BranchPayload:
-    branch_state = analyze_lexical_uncertainty(state.model_copy(deep=True))
+def input_stage_node(
+    state: AnalysisState,
+    artifacts: ArtifactBundle,
+    *,
+    transcript_override: str | None = None,
+    progress_callback: WorkflowProgressCallback | None = None,
+    step_index: int = 0,
+    total_steps: int = 0,
+) -> AnalysisState:
+    state.meta.setdefault("workflow_substeps", {})["input"] = ["prepare_input", "asr", "segment"]
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="prepare_input",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=state.status,
+        state=state,
+        event_type="substep_started",
+    )
+    prepared = prepare_input_node(state)
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="prepare_input",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=prepared.status,
+        state=prepared,
+        event_type="substep_completed",
+    )
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="asr",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=prepared.status,
+        state=prepared,
+        event_type="substep_started",
+    )
+    transcribed = transcribe_audio(prepared, artifacts, transcript_override=transcript_override)
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="asr",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=transcribed.status,
+        state=transcribed,
+        event_type="substep_completed",
+    )
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="segment",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=transcribed.status,
+        state=transcribed,
+        event_type="substep_started",
+    )
+    segmented = segment_transcript(transcribed)
+    _emit_substep_progress(
+        progress_callback,
+        phase="input",
+        substep="segment",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=segmented.status,
+        state=segmented,
+        event_type="substep_completed",
+    )
+    return segmented
+
+
+def lexical_branch_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+) -> BranchPayload:
+    branch_state = analyze_lexical_uncertainty(state.model_copy(deep=True), config_path=config_path)
     segment_updates: dict[str, dict[str, Any]] = {}
     for segment in branch_state.segments:
         segment_updates[segment.segment_id] = {
@@ -211,8 +316,12 @@ def lexical_branch_node(state: AnalysisState) -> BranchPayload:
     }
 
 
-def prosody_branch_node(state: AnalysisState) -> BranchPayload:
-    branch_state = analyze_prosody(state.model_copy(deep=True))
+def prosody_branch_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+) -> BranchPayload:
+    branch_state = analyze_prosody(state.model_copy(deep=True), config_path=config_path)
     segment_updates: dict[str, dict[str, Any]] = {}
     for segment in branch_state.segments:
         segment_updates[segment.segment_id] = {"score": segment.scores.prosody}
@@ -222,8 +331,12 @@ def prosody_branch_node(state: AnalysisState) -> BranchPayload:
     }
 
 
-def disfluency_branch_node(state: AnalysisState) -> BranchPayload:
-    branch_state = analyze_disfluency(state.model_copy(deep=True))
+def disfluency_branch_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+) -> BranchPayload:
+    branch_state = analyze_disfluency(state.model_copy(deep=True), config_path=config_path)
     segment_updates: dict[str, dict[str, Any]] = {}
     for segment in branch_state.segments:
         segment_updates[segment.segment_id] = {
@@ -239,6 +352,70 @@ def disfluency_branch_node(state: AnalysisState) -> BranchPayload:
 def context_branch_node(state: AnalysisState, *, config_path: str | None = None) -> BranchPayload:
     branch_state = apply_context(state.model_copy(deep=True), config_path=config_path)
     return {"output": branch_state.agent_outputs.context.model_copy(deep=True)}
+
+
+def evidence_stage_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+    progress_callback: WorkflowProgressCallback | None = None,
+    step_index: int = 0,
+    total_steps: int = 0,
+) -> AnalysisState:
+    substeps = ["lexical", "prosody", "disfluency", "context", "merge_analysis"]
+    state.meta.setdefault("workflow_substeps", {})["evidence"] = substeps
+
+    current = state
+    for substep, fn in (
+        ("lexical", lambda s: analyze_lexical_uncertainty(s, config_path=config_path)),
+        ("prosody", lambda s: analyze_prosody(s, config_path=config_path)),
+        ("disfluency", lambda s: analyze_disfluency(s, config_path=config_path)),
+        ("context", lambda s: apply_context(s, config_path=config_path)),
+    ):
+        _emit_substep_progress(
+            progress_callback,
+            phase="evidence",
+            substep=substep,
+            step_index=step_index,
+            total_steps=total_steps,
+            status=current.status,
+            state=current,
+            event_type="substep_started",
+        )
+        current = fn(current)
+        _emit_substep_progress(
+            progress_callback,
+            phase="evidence",
+            substep=substep,
+            step_index=step_index,
+            total_steps=total_steps,
+            status=current.status,
+            state=current,
+            event_type="substep_completed",
+        )
+
+    _emit_substep_progress(
+        progress_callback,
+        phase="evidence",
+        substep="merge_analysis",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=current.status,
+        state=current,
+        event_type="substep_started",
+    )
+    _emit_substep_progress(
+        progress_callback,
+        phase="evidence",
+        substep="merge_analysis",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=current.status,
+        state=current,
+        event_type="substep_completed",
+    )
+    current.agent_outputs.evidence_summary = build_evidence_summary(current)
+    return current
 
 
 def merge_analysis_node(graph_state: WorkflowGraphState) -> dict[str, AnalysisState]:
@@ -329,12 +506,68 @@ def _wrap_merge_node(
     return runner
 
 
-def reasoning_node(state: AnalysisState) -> AnalysisState:
-    return apply_reasoning(state)
+def coaching_stage_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+    progress_callback: WorkflowProgressCallback | None = None,
+    step_index: int = 0,
+    total_steps: int = 0,
+) -> AnalysisState:
+    state.meta.setdefault("workflow_substeps", {})["coaching"] = [
+        "deterministic_fusion",
+        "llm_coaching",
+    ]
+    _emit_substep_progress(
+        progress_callback,
+        phase="coaching",
+        substep="deterministic_fusion",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=state.status,
+        state=state,
+        event_type="substep_started",
+    )
+    updated = coaching_overlay_node(state, config_path=config_path)
+    _emit_substep_progress(
+        progress_callback,
+        phase="coaching",
+        substep="deterministic_fusion",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=updated.status,
+        state=updated,
+        event_type="substep_completed",
+    )
+    _emit_substep_progress(
+        progress_callback,
+        phase="coaching",
+        substep="llm_coaching",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=updated.status,
+        state=updated,
+        event_type="substep_started",
+    )
+    _emit_substep_progress(
+        progress_callback,
+        phase="coaching",
+        substep="llm_coaching",
+        step_index=step_index,
+        total_steps=total_steps,
+        status=updated.status,
+        state=updated,
+        event_type="substep_completed",
+    )
+    return updated
 
 
-def feedback_node(state: AnalysisState) -> AnalysisState:
-    return apply_feedback(state)
+def coaching_overlay_node(
+    state: AnalysisState,
+    *,
+    config_path: str | None = None,
+) -> AnalysisState:
+    return apply_coaching(state, config_path=config_path)
 
 
 def serialize_result_node(state: AnalysisState) -> AnalysisState:
@@ -351,154 +584,89 @@ def build_inference_graph(
     transcript_override: str | None = None,
     progress_callback: WorkflowProgressCallback | None = None,
 ) -> tuple[list[str], Any]:
-    def asr_step(state: AnalysisState) -> AnalysisState:
-        return transcribe_audio(state, artifacts, transcript_override=transcript_override)
+    def input_step(state: AnalysisState) -> AnalysisState:
+        return input_stage_node(
+            state,
+            artifacts,
+            transcript_override=transcript_override,
+            progress_callback=progress_callback,
+            step_index=step_index["input"],
+            total_steps=total_steps,
+        )
 
-    def context_step(state: AnalysisState) -> BranchPayload:
-        return context_branch_node(state, config_path=config_path)
+    def evidence_step(state: AnalysisState) -> AnalysisState:
+        return evidence_stage_node(
+            state,
+            config_path=config_path,
+            progress_callback=progress_callback,
+            step_index=step_index["evidence"],
+            total_steps=total_steps,
+        )
+
+    def coaching_step(state: AnalysisState) -> AnalysisState:
+        return coaching_stage_node(
+            state,
+            config_path=config_path,
+            progress_callback=progress_callback,
+            step_index=step_index["coaching"],
+            total_steps=total_steps,
+        )
 
     node_names = [
-        "prepare_input",
-        "asr",
-        "segment",
-        "lexical",
-        "prosody",
-        "disfluency",
-        "context",
-        "merge_analysis",
-        "reasoning",
-        "feedback",
-        "serialize_result",
+        "input",
+        "evidence",
+        "coaching",
+        "finalize",
     ]
     total_steps = len(node_names)
     step_index = {name: index + 1 for index, name in enumerate(node_names)}
 
     graph_builder = StateGraph(WorkflowGraphState)
     graph_builder.add_node(
-        "prepare_input",
+        "input",
         _wrap_state_node(
-            "prepare_input",
-            prepare_input_node,
-            step_index=step_index["prepare_input"],
+            "input",
+            input_step,
+            step_index=step_index["input"],
             total_steps=total_steps,
             progress_callback=progress_callback,
         ),
     )
     graph_builder.add_node(
-        "asr",
+        "evidence",
         _wrap_state_node(
-            "asr",
-            asr_step,
-            step_index=step_index["asr"],
+            "evidence",
+            evidence_step,
+            step_index=step_index["evidence"],
             total_steps=total_steps,
             progress_callback=progress_callback,
         ),
     )
     graph_builder.add_node(
-        "segment",
+        "coaching",
         _wrap_state_node(
-            "segment",
-            segment_transcript,
-            step_index=step_index["segment"],
+            "coaching",
+            coaching_step,
+            step_index=step_index["coaching"],
             total_steps=total_steps,
             progress_callback=progress_callback,
         ),
     )
     graph_builder.add_node(
-        "lexical",
-        _wrap_branch_node(
-            "lexical",
-            "lexical_result",
-            lexical_branch_node,
-            step_index=step_index["lexical"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "prosody",
-        _wrap_branch_node(
-            "prosody",
-            "prosody_result",
-            prosody_branch_node,
-            step_index=step_index["prosody"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "disfluency",
-        _wrap_branch_node(
-            "disfluency",
-            "disfluency_result",
-            disfluency_branch_node,
-            step_index=step_index["disfluency"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "context",
-        _wrap_branch_node(
-            "context",
-            "context_result",
-            context_step,
-            step_index=step_index["context"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "merge_analysis",
-        _wrap_merge_node(
-            step="merge_analysis",
-            step_index=step_index["merge_analysis"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "reasoning",
+        "finalize",
         _wrap_state_node(
-            "reasoning",
-            reasoning_node,
-            step_index=step_index["reasoning"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "feedback",
-        _wrap_state_node(
-            "feedback",
-            feedback_node,
-            step_index=step_index["feedback"],
-            total_steps=total_steps,
-            progress_callback=progress_callback,
-        ),
-    )
-    graph_builder.add_node(
-        "serialize_result",
-        _wrap_state_node(
-            "serialize_result",
+            "finalize",
             serialize_result_node,
-            step_index=step_index["serialize_result"],
+            step_index=step_index["finalize"],
             total_steps=total_steps,
             progress_callback=progress_callback,
         ),
     )
 
-    graph_builder.add_edge(START, "prepare_input")
-    graph_builder.add_edge("prepare_input", "asr")
-    graph_builder.add_edge("asr", "segment")
-    graph_builder.add_edge("segment", "lexical")
-    graph_builder.add_edge("segment", "prosody")
-    graph_builder.add_edge("segment", "disfluency")
-    graph_builder.add_edge("segment", "context")
-    graph_builder.add_edge(["lexical", "prosody", "disfluency", "context"], "merge_analysis")
-    graph_builder.add_edge("merge_analysis", "reasoning")
-    graph_builder.add_edge("reasoning", "feedback")
-    graph_builder.add_edge("feedback", "serialize_result")
-    graph_builder.add_edge("serialize_result", END)
+    graph_builder.add_edge(START, "input")
+    graph_builder.add_edge("input", "evidence")
+    graph_builder.add_edge("evidence", "coaching")
+    graph_builder.add_edge("coaching", "finalize")
+    graph_builder.add_edge("finalize", END)
 
     return node_names, graph_builder.compile()

@@ -1,5 +1,3 @@
-"""Application-facing entrypoints for the agent service."""
+"""Application package for the agent service."""
 
-from services.agent.src.app.cli_service import app
-
-__all__ = ["app"]
+__all__: list[str] = []

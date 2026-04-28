@@ -1,0 +1,66 @@
+[scoring]
+filler_weight = 0.12
+self_repair_weight = 0.16
+repetition_weight = 0.18
+repetition_token_pattern = "\\b[\\w']+\\b"
+
+[explanations]
+filler = "该句包含填充词，影响语流干净程度。"
+repeat = "该句存在重复现象，影响表达流畅度。"
+self_repair = "该句包含自我修正痕迹，削弱了表达稳定性。"
+
+[[filler_patterns]]
+label = "um"
+pattern = "\\bum\\b"
+
+[[filler_patterns]]
+label = "uh"
+pattern = "\\buh\\b"
+
+[[filler_patterns]]
+label = "er"
+pattern = "\\ber\\b"
+
+[[filler_patterns]]
+label = "ah"
+pattern = "\\bah\\b"
+
+[[filler_patterns]]
+label = "you know"
+pattern = "\\byou know\\b"
+
+[[filler_patterns]]
+label = "like"
+pattern = "\\blike\\b"
+
+[[filler_patterns]]
+label = "嗯"
+pattern = "嗯+"
+
+[[filler_patterns]]
+label = "呃"
+pattern = "呃+"
+
+[[filler_patterns]]
+label = "那个"
+pattern = "那个"
+
+[[self_repair_patterns]]
+label = "i mean"
+pattern = "\\bi mean\\b"
+
+[[self_repair_patterns]]
+label = "sorry"
+pattern = "\\bsorry\\b"
+
+[[self_repair_patterns]]
+label = "rather"
+pattern = "\\brather\\b"
+
+[[self_repair_patterns]]
+label = "不是"
+pattern = "不是"
+
+[[self_repair_patterns]]
+label = "我的意思是"
+pattern = "我的意思是"

@@ -1,0 +1,21 @@
+[default_weights]
+lexical = 0.4
+prosody = 0.3
+disfluency = 0.3
+
+[level_thresholds]
+high = 0.65
+medium = 0.35
+low_floor = 0.0
+
+[dominant_causes]
+lexical = "lexical_uncertainty"
+prosody = "prosody"
+disfluency = "disfluency"
+
+[summaries]
+lexical_only = "检测到明显的措辞不确定性，部分句子使用了弱承诺或模糊表达。"
+prosody_only = "检测到明显的韵律问题，部分片段在语速、停顿或起伏上不够稳定。"
+disfluency_only = "检测到明显的流畅度问题，部分句子存在填充词、重复或自我修正。"
+mixed = "检测到多维度问题，部分片段在措辞、韵律或流畅度上都存在改进空间。"
+stable = "当前 lexical、prosody 和 disfluency 维度都未检测到明显问题。"

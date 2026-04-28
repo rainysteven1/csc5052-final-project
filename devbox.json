@@ -1,21 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.7/.schema/devbox.schema.json",
-  "packages": [
-    "ruff@0.14.11",
-    "git-cliff@2.11.0",
-    "lefthook@2.0.12",
-    "uv@0.9.24",
-    "just@1.46.0"
-  ],
+  "packages": ["go@1.24.11", "git-cliff@2.11.0", "lefthook@2.0.12"],
   "shell": {
-    "init_hook": [
-      "echo 'Welcome to devbox!'",
-      "lefthook install"
-    ],
+    "init_hook": ["echo 'Welcome to devbox!'", "lefthook install"],
     "scripts": {
-      "install-hooks": [
-        "lefthook install"
-      ]
+      "install-hooks": ["lefthook install"]
     }
   }
 }

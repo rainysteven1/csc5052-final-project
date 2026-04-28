@@ -12,8 +12,8 @@ The current SpeakSure++ runtime exposes **11 pipeline nodes** to the frontend:
 6. `disfluency`
 7. `context`
 8. `merge_analysis`
-9. `reasoning`
-10. `feedback`
+9. `judgment`
+10. `coaching`
 11. `serialize_result`
 
 This level of granularity is technically accurate, but it is **too fine-grained for a demo-facing desktop UI**.
@@ -39,7 +39,7 @@ As a result:
 
 Users do **not** naturally think in this sequence:
 
-`prepare_input -> asr -> segment -> lexical -> prosody -> disfluency -> context -> merge_analysis -> reasoning -> feedback -> serialize_result`
+`prepare_input -> asr -> segment -> lexical -> prosody -> disfluency -> context -> merge_analysis -> judgment -> coaching -> serialize_result`
 
 They think in a much simpler way:
 
@@ -135,7 +135,7 @@ Example:
 - one node handles `prepare_input + asr + segment`
 - one node handles `lexical + prosody + disfluency + context`
 - one node handles `merge_analysis`
-- one node handles `reasoning + feedback`
+- one node handles `judgment + coaching`
 - one node handles `serialize_result`
 
 #### Advantages
@@ -148,7 +148,7 @@ Example:
 - larger code changes
 - weaker error localization
 - parallel branch semantics become hidden inside a big node
-- future debugging becomes harder
+- later debugging becomes harder
 - more regression risk for replay, SSE, and state snapshots
 
 
@@ -166,7 +166,7 @@ This gives the UI the simplified structure it needs without damaging backend mai
 
 ## 6. Recommended 5-Phase Model
 
-### Phase 1: `input`
+### Stage A: `input`
 
 Contains:
 
@@ -222,7 +222,7 @@ Recommended UI label:
 
 Contains:
 
-- `reasoning`
+- `coaching`
 - `feedback`
 
 User-facing meaning:
@@ -263,7 +263,7 @@ But it hides `merge_analysis` too early.
 For this project, `merge_analysis` is still a meaningful technical boundary because it separates:
 
 - branch-level scoring
-- final high-level reasoning
+- final high-level judgment and coaching
 
 So 5 phases is the best balance:
 
@@ -283,7 +283,7 @@ So 5 phases is the best balance:
 | `disfluency` | `analysis` | `Disfluency` |
 | `context` | `analysis` | `Context` |
 | `merge_analysis` | `fusion` | `Merge` |
-| `reasoning` | `coaching` | `Reasoning` |
+| `judgment` | `coaching` | `Coaching` |
 | `feedback` | `coaching` | `Feedback` |
 | `serialize_result` | `export` | `Serialize` |
 
@@ -316,7 +316,7 @@ RAW_NODE_TO_PHASE = {
     "disfluency": ("analysis", "Disfluency"),
     "context": ("analysis", "Context"),
     "merge_analysis": ("fusion", "Merge"),
-    "reasoning": ("coaching", "Reasoning"),
+    "judgment": ("coaching", "Coaching"),
     "feedback": ("coaching", "Feedback"),
     "serialize_result": ("export", "Serialize"),
 }
@@ -336,11 +336,12 @@ That way:
 - frontend only needs 5 phase cards
 
 
-### 9.2 `http_api.py`
+### 9.2 Go Backend Job API
 
 Current file:
 
-- `services/agent/src/app/usecases/http_api.py`
+- `services/backend/go/internal/httpapi/`
+- `services/backend/go/internal/service/`
 
 Current issue:
 
@@ -353,7 +354,7 @@ Recommended change:
   - `current_node_raw`
   - `current_phase`
 - or minimally:
-  - keep `current_node` for compatibility
+  - keep `current_node` as the raw internal node field
   - add `current_phase`
   - add `display_total_steps = 5`
 
@@ -366,7 +367,7 @@ Recommended fields:
 
 Important note:
 
-Do **not** remove raw node information immediately, because replay/debug still benefits from it.
+Keep raw node information for replay/debug visibility, but treat it purely as runtime observability data.
 
 
 ### 9.3 Replay contract
@@ -380,7 +381,7 @@ If the UI moves to 5 phases, replay should:
 
 Recommended model:
 
-- raw event history stays 11-step compatible
+- raw event history stays 11-step detailed
 - UI display layer groups events by phase
 
 
@@ -390,7 +391,7 @@ Recommended model:
 
 Current file:
 
-- `services/agent/frontend/src/types/analysis.ts`
+- `services/frontend/src/types/analysis.ts`
 
 Current issue:
 
@@ -421,7 +422,7 @@ This separates:
 
 Current file:
 
-- `services/agent/frontend/src/lib/analysis-helpers.ts`
+- `services/frontend/src/lib/analysis-helpers.ts`
 
 This file is currently heavily 11-node oriented:
 
@@ -458,8 +459,8 @@ For example:
 
 Current files:
 
-- `services/agent/frontend/src/components/pipeline/NodeGrid.tsx`
-- `services/agent/frontend/src/components/pipeline/NodeSpotlight.tsx`
+- `services/frontend/src/components/pipeline/NodeGrid.tsx`
+- `services/frontend/src/components/pipeline/NodeSpotlight.tsx`
 
 These currently assume "one card per raw node".
 
@@ -546,7 +547,7 @@ This is important:
 
 ## 12. Migration Strategy
 
-### Phase 1 - Contract-level consolidation
+### Stage A - Contract-level consolidation
 
 Change only the event/display layer:
 
@@ -600,7 +601,7 @@ This gives the best outcome for:
 - demo clarity
 - UI simplicity
 - backend safety
-- future maintainability
+- later maintainability
 
 
 ## 14. Concrete Conclusion

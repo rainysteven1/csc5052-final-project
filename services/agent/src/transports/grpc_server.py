@@ -10,10 +10,10 @@ import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from grpc_reflection.v1alpha import reflection
 
+from services.agent.gen.speaksure.v1 import agent_service_pb2, agent_service_pb2_grpc
 from services.agent.src.app.usecases.analysis import execute_analysis
 from services.agent.src.app.usecases.wandb_upload import upload_single_run_to_wandb
 from services.agent.src.services.result_serializer import build_analysis_digest, build_result_payload
-from services.gen.speaksure.v1 import agent_service_pb2, agent_service_pb2_grpc
 
 AGENT_SERVICE_NAME = agent_service_pb2.DESCRIPTOR.services_by_name["AgentService"].full_name
 

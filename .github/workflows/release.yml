@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate tag matches pyproject.toml version
+      - name: Validate tag matches services/agent/pyproject.toml version
         env:
           TAG_NAME: ${{ github.ref_name }}
         run: |
@@ -26,18 +26,18 @@ jobs:
           from pathlib import Path
           import tomllib
 
-          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          data = tomllib.loads(Path("services/agent/pyproject.toml").read_text(encoding="utf-8"))
           print(data["project"]["version"])
           PY
           )"
 
           EXPECTED_TAG="v${PYPROJECT_VERSION}"
 
-          echo "pyproject.toml version: ${PYPROJECT_VERSION}"
+          echo "services/agent/pyproject.toml version: ${PYPROJECT_VERSION}"
           echo "incoming tag: ${TAG_NAME}"
 
           if [ "${TAG_NAME}" != "${EXPECTED_TAG}" ]; then
-            echo "Tag ${TAG_NAME} does not match pyproject.toml version ${EXPECTED_TAG}"
+            echo "Tag ${TAG_NAME} does not match services/agent/pyproject.toml version ${EXPECTED_TAG}"
             exit 1
           fi
 
@@ -51,10 +51,10 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: services/agent/frontend/package-lock.json
+          cache-dependency-path: services/frontend/package-lock.json
 
       - name: Build frontend bundle
-        working-directory: services/agent/frontend
+        working-directory: services/frontend
         run: |
           npm ci
           npm run build
@@ -74,17 +74,17 @@ jobs:
           FRONTEND_DIST_ZIP="${GITHUB_WORKSPACE}/release-artifacts/SpeakSure-${TAG_NAME}-frontend-dist.zip"
 
           (
-            cd services/agent/frontend/dist
+            cd services/frontend/dist
             zip -r "${FRONTEND_DIST_ZIP}" .
           )
 
           cp README.md release-artifacts/submission-bundle/README.md
           cp services/agent/README.md release-artifacts/submission-bundle/AGENT_SERVICE_README.md
-          cp services/agent/frontend/README.md release-artifacts/submission-bundle/FRONTEND_README.md
+          cp services/frontend/README.md release-artifacts/submission-bundle/FRONTEND_README.md
           cp docs/DEMO_AND_SUBMISSION_GUIDE.md release-artifacts/submission-bundle/DEMO_AND_SUBMISSION_GUIDE.md
-          cp pyproject.toml release-artifacts/submission-bundle/pyproject.toml
-          cp services/agent/frontend/package.json release-artifacts/submission-bundle/frontend-package.json
-          cp -r services/agent/frontend/dist/. release-artifacts/submission-bundle/frontend-dist/
+          cp services/agent/pyproject.toml release-artifacts/submission-bundle/agent-pyproject.toml
+          cp services/frontend/package.json release-artifacts/submission-bundle/frontend-package.json
+          cp -r services/frontend/dist/. release-artifacts/submission-bundle/frontend-dist/
 
           cat > "release-artifacts/SpeakSure-${TAG_NAME}-release-notes.txt" <<EOF
           SpeakSure release bundle for tag ${TAG_NAME}
@@ -115,7 +115,7 @@ jobs:
           - Agent service README
           - Frontend README
           - Demo and submission guide
-          - \`pyproject.toml\`
+          - \`services/agent/pyproject.toml\`
           - Frontend \`package.json\`
           - Built frontend static assets under \`frontend-dist/\`
 
@@ -144,7 +144,7 @@ jobs:
 
           ## Tag / version rule
 
-          This release was generated from Git tag ${TAG_NAME}, which matches the version in \`pyproject.toml\`.
+          This release was generated from Git tag ${TAG_NAME}, which matches the version in \`services/agent/pyproject.toml\`.
           EOF
 
           (
@@ -168,7 +168,7 @@ jobs:
 
             Version summary:
             - Git tag: `${{ github.ref_name }}`
-            - `pyproject.toml` version: `${{ env.PYPROJECT_VERSION }}`
+            - `services/agent/pyproject.toml` version: `${{ env.PYPROJECT_VERSION }}`
 
             This release is triggered by pushing a Git tag and includes:
             - full repository source snapshot

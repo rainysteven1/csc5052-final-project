@@ -1,6 +1,6 @@
 # SpeakSure++
 
-SpeakSure++ is a speech coaching system with a routed desktop-style review frontend, a Python backend, live SSE progress streaming, and replay support for saved analysis JSON files.
+SpeakSure++ is a speech coaching system with a routed desktop-style review frontend, a Go backend, live SSE progress streaming, and replay support for saved analysis JSON files.
 
 ## Quick Start
 
@@ -24,9 +24,7 @@ Typical fields you may want to check there:
 
 - `asr_backend`
 - `asr_onnx_model_dir`
-- `asr_grpc_target`
 - `agent_grpc_bind`
-- `agent_http_bind`
 
 If you want to inspect current runtime readiness:
 
@@ -54,6 +52,11 @@ Default local addresses:
 - backend: `http://127.0.0.1:8000`
 
 The frontend proxies `/api/*` to the backend through Vite.
+
+Local storage ownership:
+
+- `services/backend/data/` stores backend jobs, uploads, and result files
+- `services/agent/` keeps the Python gRPC engine, prompts, rules, models, and analysis runtime assets
 
 ## Frontend Workspace
 
@@ -87,8 +90,9 @@ This is useful for coursework demos because it avoids needing a fresh live run e
 
 ## Key Docs
 
-- backend/service details: `services/agent/README.md`
-- frontend workspace details: `services/agent/frontend/README.md`
+- backend/service details: `services/backend/README.md`
+- agent analysis core: `services/agent/README.md`
+- frontend workspace details: `services/frontend/README.md`
 - demo and submission guide: `docs/DEMO_AND_SUBMISSION_GUIDE.md`
 - model selection notes: `docs/SpeakSure++_HuggingFace预训练模型选型与下载清单.md`
 
@@ -103,7 +107,7 @@ git push origin v0.1.0
 
 Important rule:
 
-- the tag must match the version in `pyproject.toml`
+- the tag must match the version in `services/agent/pyproject.toml`
 
 The workflow publishes:
 
@@ -113,3 +117,8 @@ The workflow publishes:
 - release notes text file
 
 The submission bundle includes the README files, deployment notes, and built frontend assets for handoff.
+
+
+Current architecture reference:
+
+- `docs/CURRENT_ARCHITECTURE.md`

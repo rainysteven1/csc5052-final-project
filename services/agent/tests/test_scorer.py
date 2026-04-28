@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from services.agent.src.schemas.analysis import ContextOutput, SpeechSegment
-from services.agent.src.services.agent.tools.scorer import classify_level, score_state
+from services.agent.src.backend.tools.scorer import classify_level, score_state
 from services.agent.src.state import AnalysisState
 
 

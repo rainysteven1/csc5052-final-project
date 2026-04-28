@@ -7,8 +7,6 @@ import os
 import socket
 import time
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
 
 from rich.console import Group
 from rich.live import Live
@@ -16,10 +14,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from services.agent.src.asr.config import missing_whisper_onnx_files, resolve_asr_backend_config
 from services.agent.src.config import default_config_path, repo_root
 from services.agent.src.console import console
 from services.agent.src.services.artifact_loader import read_speaksure_section
-from services.asr.src.backend import missing_whisper_onnx_files, resolve_asr_backend_config
 
 
 def _runtime_section() -> dict[str, object]:
@@ -139,24 +137,6 @@ def _probe_tcp(endpoint: str, *, timeout: float = 0.35) -> tuple[str, str]:
         return "warn", "closed"
 
 
-def _probe_http_health(endpoint: str, *, timeout: float = 0.5) -> tuple[str, str]:
-    parsed = _parse_host_port(endpoint)
-    if parsed is None:
-        return "warn", "invalid endpoint"
-
-    host, port = parsed
-    url = f"http://{_loopback_host(host)}:{port}/api/v1/health"
-    try:
-        with urlopen(url, timeout=timeout) as response:
-            if 200 <= response.status < 300:
-                return "ok", "healthy"
-            return "warn", f"http {response.status}"
-    except HTTPError as exc:
-        return "warn", f"http {exc.code}"
-    except URLError:
-        return "warn", "closed"
-
-
 def _check_onnx_python_deps() -> tuple[bool, str]:
     missing: list[str] = []
     for module_name in ("onnxruntime", "optimum", "transformers"):
@@ -252,18 +232,14 @@ def _runtime_summary_status(
     provider: str,
     backend_name: str,
     agent_grpc_probe_level: str,
-    agent_http_probe_level: str,
-    asr_bind_probe_level: str,
     asr_target_probe_level: str,
     backend_target_probe_level: str,
     onnx_deps_ready: bool,
     missing_onnx_files: list[str],
 ) -> tuple[str, str, str]:
-    active_probes = [agent_grpc_probe_level, agent_http_probe_level]
+    active_probes = [agent_grpc_probe_level]
     if provider == "grpc":
         active_probes.append(asr_target_probe_level)
-    if provider != "local":
-        active_probes.append(asr_bind_probe_level)
 
     active_count = sum(1 for level in active_probes if level == "ok")
     if active_count == 0:
@@ -281,7 +257,7 @@ def _runtime_summary_status(
     if backend_name == "onnx" and (not onnx_deps_ready or missing_onnx_files):
         return "warn", "PARTIAL", "ONNX backend is selected, but runtime deps or model files are incomplete."
 
-    if agent_http_probe_level == "ok" or agent_grpc_probe_level == "ok":
+    if agent_grpc_probe_level == "ok":
         return "ok", "READY", "Core transports respond and the configured ASR path looks usable."
 
     return "warn", "PARTIAL", "Configuration looks valid, but no primary entrypoint is reachable yet."
@@ -298,22 +274,13 @@ def _summary_panel(
     backend_name: str,
     agent_grpc_probe_level: str,
     agent_grpc_probe_text: str,
-    agent_http_probe_level: str,
-    agent_http_probe_text: str,
-    asr_bind_probe_level: str,
-    asr_bind_probe_text: str,
 ) -> Panel:
     summary = _section_table("Runtime Summary")
     summary.add_row("overall", f"{_status_label(status_level, status_text)} {status_note}")
     summary.add_row("checked at", checked_at)
     summary.add_row(
         "service mesh",
-        "agent grpc "
-        f"{_status_label(agent_grpc_probe_level, agent_grpc_probe_text)}"
-        "  |  agent http "
-        f"{_status_label(agent_http_probe_level, agent_http_probe_text)}"
-        "  |  asr grpc "
-        f"{_status_label(asr_bind_probe_level, asr_bind_probe_text)}",
+        "agent grpc " f"{_status_label(agent_grpc_probe_level, agent_grpc_probe_text)}",
     )
     summary.add_row(
         "routing",
@@ -354,12 +321,8 @@ def _build_report() -> Group:
     onnx_download_hint = _suggest_onnx_download(backend.onnx_model_dir)
     onnx_deps_ready, onnx_deps_detail = _check_onnx_python_deps()
     agent_grpc_bind = _fmt(runtime.get("agent_grpc_bind", "127.0.0.1:50051"))
-    agent_http_bind = _fmt(runtime.get("agent_http_bind", "127.0.0.1:8000"))
     asr_grpc_target = _fmt(runtime.get("asr_grpc_target", "127.0.0.1:50052"))
-    asr_grpc_bind = _fmt(runtime.get("asr_grpc_bind", "127.0.0.1:50052"))
     agent_grpc_probe_level, agent_grpc_probe_text = _probe_tcp(agent_grpc_bind)
-    agent_http_probe_level, agent_http_probe_text = _probe_http_health(agent_http_bind)
-    asr_bind_probe_level, asr_bind_probe_text = _probe_tcp(asr_grpc_bind)
     asr_target_probe_level, asr_target_probe_text = _probe_tcp(asr_grpc_target)
     backend_target_probe_level, backend_target_probe_text = _probe_tcp(backend.grpc_target)
     checked_at = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -367,8 +330,6 @@ def _build_report() -> Group:
         provider=provider,
         backend_name=backend.backend,
         agent_grpc_probe_level=agent_grpc_probe_level,
-        agent_http_probe_level=agent_http_probe_level,
-        asr_bind_probe_level=asr_bind_probe_level,
         asr_target_probe_level=asr_target_probe_level,
         backend_target_probe_level=backend_target_probe_level,
         onnx_deps_ready=onnx_deps_ready,
@@ -388,10 +349,6 @@ def _build_report() -> Group:
             backend_name=backend.backend,
             agent_grpc_probe_level=agent_grpc_probe_level,
             agent_grpc_probe_text=agent_grpc_probe_text,
-            agent_http_probe_level=agent_http_probe_level,
-            agent_http_probe_text=agent_http_probe_text,
-            asr_bind_probe_level=asr_bind_probe_level,
-            asr_bind_probe_text=asr_bind_probe_text,
         )
     )
     environment = _section_table("Environment")
@@ -420,25 +377,21 @@ def _build_report() -> Group:
     agent = _section_table("Agent Service")
     agent.add_row("grpc bind", f"{_status_label('info', 'listen')} {agent_grpc_bind}")
     agent.add_row("grpc probe", f"{_status_label(agent_grpc_probe_level, agent_grpc_probe_text)}")
-    agent.add_row("http bind", f"{_status_label('info', 'listen')} {agent_http_bind}")
-    agent.add_row("http probe", f"{_status_label(agent_http_probe_level, agent_http_probe_text)}")
-    agent.add_row("asr target", f"{_status_label('info', 'upstream')} {asr_grpc_target}")
     if provider == "grpc":
+        agent.add_row("asr target", f"{_status_label('info', 'upstream')} {asr_grpc_target}")
         agent.add_row("target probe", f"{_status_label(asr_target_probe_level, asr_target_probe_text)}")
     panels.append(
         _section_panel(
             "Agent Service",
             agent,
             border_style="blue",
-            subtitle="[bold blue]HTTP + gRPC[/bold blue]",
+            subtitle="[bold blue]gRPC engine[/bold blue]",
         )
     )
-    asr = _section_table("ASR Service")
-    asr.add_row("grpc bind", f"{_status_label('info', 'listen')} {asr_grpc_bind}")
-    asr.add_row("grpc probe", f"{_status_label(asr_bind_probe_level, asr_bind_probe_text)}")
+    asr = _section_table("ASR Runtime")
     asr.add_row("backend", f"{_status_label('info', 'runtime')} {_badge(_fmt(backend.backend), kind='status')}")
-    asr.add_row("backend target", f"{_status_label('info', 'relay')} {_fmt(backend.grpc_target)}")
     if backend.backend == "grpc":
+        asr.add_row("backend target", f"{_status_label('info', 'relay')} {_fmt(backend.grpc_target)}")
         asr.add_row("backend probe", f"{_status_label(backend_target_probe_level, backend_target_probe_text)}")
     asr.add_row("onnx model dir", _fmt_path(onnx_dir_display))
     if backend.backend == "onnx" or onnx_dir_status != "unset":
@@ -449,8 +402,8 @@ def _build_report() -> Group:
             asr.add_row("onnx deps", _status_label("ok", "installed"))
         else:
             asr.add_row("onnx deps", f"{_status_label('warn', 'missing')} {onnx_deps_detail}")
-            asr.add_row("deps", "uv sync --group hf_asr_onnx")
-            next_actions.append("Install ONNX runtime deps with `uv sync --group hf_asr_onnx`.")
+            asr.add_row("deps", "cd services/agent && uv sync --group runtime")
+            next_actions.append("Install ONNX runtime deps with `cd services/agent && uv sync --group runtime`.")
         if missing_onnx_files:
             asr.add_row("onnx status", f"{_status_label('warn', 'missing files')} {', '.join(missing_onnx_files)}")
             if onnx_download_hint:
@@ -463,20 +416,16 @@ def _build_report() -> Group:
         next_actions.append(
             "Switch `SPEAKSURE_ASR_PROVIDER` to `local` or `grpc` when you want real ASR instead of stub output."
         )
-    elif provider == "grpc":
-        if asr_target_probe_level != "ok":
-            next_actions.append("Start the ASR gRPC service with `just run-asr-grpc` before sending real traffic.")
+    elif provider == "grpc" and asr_target_probe_level != "ok":
+        next_actions.append("Check `asr_grpc_target` or start the configured upstream ASR endpoint before sending real traffic.")
     if backend.backend == "grpc" and backend_target_probe_level != "ok":
         next_actions.append(
             "Check `asr_backend_grpc_target` or start the upstream ASR backend before using relay mode."
         )
-    if agent_http_probe_level != "ok":
-        next_actions.append(
-            "If you want frontend REST access now, start the agent HTTP transport with `just run-agent-http`."
-        )
+    next_actions.append("If you want frontend REST access now, start the Go backend with `just run-backend`.")
     panels.append(
         _section_panel(
-            "ASR Service",
+            "ASR Runtime",
             asr,
             border_style="magenta",
             subtitle=f"backend {_badge(_fmt(backend.backend), kind='status')}",

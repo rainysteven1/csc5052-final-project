@@ -6,9 +6,9 @@
 
 结合你现在的服务拆分：
 
-- `services/asr`：更适合放音频前处理、ASR、VAD 这类纯音频模型
-- `services/agent`：更适合放 transcript 后处理、语言识别、标点恢复、语义 embedding、情感/韵律 proxy 这类模型
-- `reasoning` / `feedback`：依然更适合保留给 MiniMax 这类 LLM，而不是单独下一个 HF 分类模型
+- `services/agent/src/asr/`：负责音频前处理、ASR、VAD 这类运行时能力
+- `services/agent`：统一承载 transcript 后处理、语言识别、标点恢复、语义 embedding、情感/韵律 proxy 这类模型与分析逻辑
+- `coaching` / `feedback`：依然更适合保留给 MiniMax 这类 LLM，而不是单独下一个 HF 分类模型
 
 ---
 
@@ -18,8 +18,8 @@
 
 | 优先级 | 节点 | 推荐模型 | 放置目录 |
 | --- | --- | --- | --- |
-| P0 | ASR 主模型 | `openai/whisper-large-v3` 或 `openai/whisper-large-v3-turbo` | `services/asr/models/` |
-| P0 | VAD / speech segmentation | `pyannote/segmentation-3.0` | `services/asr/models/` |
+| P0 | ASR 主模型 | `openai/whisper-large-v3` 或 `openai/whisper-large-v3-turbo` | `services/agent/models/asr/` |
+| P0 | VAD / speech segmentation | `pyannote/segmentation-3.0` | `services/agent/models/asr/` |
 | P0 | transcript 语言识别 | `papluca/xlm-roberta-base-language-detection` | `services/agent/models/` |
 | P0 | transcript 标点恢复 | `FireRedTeam/FireRedPunc` 或英文场景下 `felflare/bert-restore-punctuation` | `services/agent/models/` |
 
@@ -42,14 +42,14 @@
 
 | 环节 | 是否建议上 DL | 推荐模型 | 备选 | 任务说明 | 推荐服务 | 建议本地目录 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ASR 主链 | 强烈建议 | `openai/whisper-large-v3` | `openai/whisper-large-v3-turbo`、`distil-whisper/distil-large-v3` | 语音转文本主模型，优先走稳定 ASR 主链 | `services/asr` | `services/asr/models/openai__whisper-large-v3` | `whisper-large-v3` 更适合做你这里的“标准 ASR 主模型”；`turbo` 更快，但如果你要保守一些，先用 `large-v3` 更稳 |
-| VAD / speech region | 建议 | `pyannote/segmentation-3.0` | `pyannote/voice-activity-detection` | 做 speech / non-speech 切分，辅助 ASR 分段和 pause 统计 | `services/asr` | `services/asr/models/pyannote__segmentation-3.0` | `segmentation-3.0` 需要接受 HF 条款并带 token；可同时做 VAD / overlap 相关处理 |
+| ASR 主链 | 强烈建议 | `openai/whisper-large-v3` | `openai/whisper-large-v3-turbo`、`distil-whisper/distil-large-v3` | 语音转文本主模型，优先走稳定 ASR 主链 | `services/agent` | `services/agent/models/asr/openai__whisper-large-v3` | `whisper-large-v3` 更适合做你这里的“标准 ASR 主模型”；`turbo` 更快，但如果你要保守一些，先用 `large-v3` 更稳 |
+| VAD / speech region | 建议 | `pyannote/segmentation-3.0` | `pyannote/voice-activity-detection` | 做 speech / non-speech 切分，辅助 ASR 分段和 pause 统计 | `services/agent` | `services/agent/models/asr/pyannote__segmentation-3.0` | `segmentation-3.0` 需要接受 HF 条款并带 token；可同时做 VAD / overlap 相关处理 |
 | transcript 语言识别 | 建议 | `papluca/xlm-roberta-base-language-detection` | 无需备选时可直接用它 | 识别 transcript 语言，用于中英样本路由和后续策略切换 | `services/agent` | `services/agent/models/papluca__xlm-roberta-base-language-detection` | 支持 20+ 语言，适合作为 transcript 级 LID |
 | 标点恢复 | 建议 | `FireRedTeam/FireRedPunc` | `felflare/bert-restore-punctuation` | 给 ASR 文本补标点，改善 segmentation / lexical 分析输入质量 | `services/agent` | `services/agent/models/FireRedTeam__FireRedPunc` | 如果你要中英兼顾，优先 `FireRedPunc`；如果只做英文、想依赖更轻，可用 `felflare` |
 | prosody / affect proxy | 可选但有价值 | `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` | 先不换也行 | 输出 arousal / dominance / valence，可作为“紧张、犹豫、情绪起伏”的 proxy 特征 | `services/agent` | `services/agent/models/audeering__wav2vec2-large-robust-12-ft-emotion-msp-dim` | 它不是直接做“不确定性”分类，而是给你可解释的连续声学情绪特征 |
 | semantic retrieval / example matching | 可选 | `sentence-transformers/paraphrase-multilingual-mpnet-base-v2` | 英文场景可用 `sentence-transformers/all-MiniLM-L6-v2` | 把 transcript / feedback / exemplar 做 embedding，方便找相似案例或提示模板 | `services/agent` | `services/agent/models/sentence-transformers__paraphrase-multilingual-mpnet-base-v2` | 如果后面你要“找相似表达问题片段”，这个很有用 |
 | lexical hedge / uncertainty 分类 | 不建议现在就上 | `ChrisLiewJY/BERTweet-Hedge` | 先用规则 + LLM | 英文 hedge 文本分类 | `services/agent` | `services/agent/models/ChrisLiewJY__BERTweet-Hedge` | 更像社媒文本 hedge detector，不是专门为口语公开表达设计，只适合做实验性增强 |
-| disfluency / stuttering | 不建议现在主用 | `pmootr/stuttering-detection-wavlm-lora` | 先用规则 | 更偏 stuttering event 分类 | `services/agent` 或 `services/asr` | `services/agent/models/pmootr__stuttering-detection-wavlm-lora` | 任务更像口吃检测，不完全等价于 filler / hesitation / self-repair |
+| disfluency / stuttering | 不建议现在主用 | `pmootr/stuttering-detection-wavlm-lora` | 先用规则 | 更偏 stuttering event 分类 | `services/agent` | `services/agent/models/pmootr__stuttering-detection-wavlm-lora` | 任务更像口吃检测，不完全等价于 filler / hesitation / self-repair |
 
 ---
 
@@ -60,7 +60,7 @@
 | 节点 | 推荐方式 | 原因 |
 | --- | --- | --- |
 | `context` | 配置 / 规则 | 它本质是场景权重与策略，不需要模型 |
-| `reasoning` | MiniMax / LLM | 这是融合解释、归因、总结，LLM 比分类模型更合适 |
+| `coaching` | MiniMax / LLM | 这是融合解释、归因、总结，LLM 比分类模型更合适 |
 | `feedback` | MiniMax / LLM | 这是生成式任务，不适合再找一个小 HF 分类头硬顶 |
 | `filler` / `self-repair` 初版 | 规则 + 正则 + 时间特征 | 对你的 demo 价值很高，而且比硬上小模型稳定 |
 
@@ -87,7 +87,7 @@
 - `Whisper-large` 负责“把音频稳稳转成 transcript”
 - `Qwen` 这条线当前先不进生产主链
 
-所以在你当前这个“服务器只有 CPU”前提下，`services/asr` 更合理的结构是：
+所以在你当前这个“服务器只有 CPU”前提下，`services/agent/src/asr/` 更合理的结构是：
 
 ```text
 asr_router
@@ -218,7 +218,7 @@ asr_router
 ```bash
 huggingface-cli download \
   openai/whisper-large-v3 \
-  --local-dir services/asr/models/openai__whisper-large-v3
+  --local-dir services/agent/models/asr/openai__whisper-large-v3
 ```
 
 如果你更在意吞吐和速度，再下 turbo：
@@ -226,7 +226,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   openai/whisper-large-v3-turbo \
-  --local-dir services/asr/models/openai__whisper-large-v3-turbo
+  --local-dir services/agent/models/asr/openai__whisper-large-v3-turbo
 ```
 
 英文轻量备选：
@@ -234,7 +234,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   distil-whisper/distil-large-v3 \
-  --local-dir services/asr/models/distil-whisper__distil-large-v3
+  --local-dir services/agent/models/asr/distil-whisper__distil-large-v3
 ```
 
 ### 5.2 CPU 版 Whisper ONNX
@@ -275,7 +275,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   onnx-community/whisper-large-v3-turbo \
-  --local-dir services/asr/models/onnx-community__whisper-large-v3-turbo \
+  --local-dir services/agent/models/asr/onnx-community__whisper-large-v3-turbo \
   --include "config.json" \
   --include "generation_config.json" \
   --include "preprocessor_config.json" \
@@ -295,7 +295,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   onnx-community/whisper-large-v3-ONNX \
-  --local-dir services/asr/models/onnx-community__whisper-large-v3-ONNX \
+  --local-dir services/agent/models/asr/onnx-community__whisper-large-v3-ONNX \
   --include "config.json" \
   --include "generation_config.json" \
   --include "preprocessor_config.json" \
@@ -315,7 +315,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   distil-whisper/distil-small.en \
-  --local-dir services/asr/models/distil-whisper__distil-small.en \
+  --local-dir services/agent/models/asr/distil-whisper__distil-small.en \
   --include "config.json" \
   --include "generation_config.json" \
   --include "preprocessor_config.json" \
@@ -346,7 +346,7 @@ huggingface-cli download \
 huggingface-cli download \
   pyannote/segmentation-3.0 \
   --token "$HF_TOKEN" \
-  --local-dir services/asr/models/pyannote__segmentation-3.0
+  --local-dir services/agent/models/asr/pyannote__segmentation-3.0
 ```
 
 ### 5.4 VAD 的 ONNX 版本
@@ -356,7 +356,7 @@ huggingface-cli download \
 ```bash
 huggingface-cli download \
   onnx-community/pyannote-segmentation-3.0 \
-  --local-dir services/asr/models/onnx-community__pyannote-segmentation-3.0
+  --local-dir services/agent/models/asr/onnx-community__pyannote-segmentation-3.0
 ```
 
 ### 5.5 语言识别
@@ -412,14 +412,14 @@ huggingface-cli download \
 | 组名建议 | 主要用途 | 典型依赖 |
 | --- | --- | --- |
 | `hf_asr` | Whisper 主 ASR | `transformers`, `torch`, `accelerate`, `sentencepiece` |
-| `hf_asr_onnx` | Whisper CPU 部署 | `onnxruntime`, `optimum`, `tokenizers` |
+| `runtime` | 当前 agent 运行时（含内置 Whisper ONNX） | `onnxruntime`, `optimum`, `tokenizers` |
 | `hf_vad` | pyannote VAD / segmentation | `pyannote.audio`, `torch`, `torchaudio` |
 | `hf_vad_onnx` | pyannote CPU 部署 | `onnxruntime`, 对应 processor/runtime 包 |
 | `hf_text_models` | 语言识别 / 标点恢复 / hedge 分类 | `transformers`, `torch` |
 | `hf_embeddings` | SentenceTransformer embedding | `sentence-transformers`, `transformers`, `torch` |
 | `hf_audio_traits` | prosody / affect proxy | `transformers`, `torch`, `librosa` 或等价音频依赖 |
 
-不要把这些一口气装进 `agent_http` / `agent_grpc` 主组里；最好按实际启用的节点再增量引入。
+现在已经统一收敛到 `runtime` 组，直接按 agent 当前主链安装即可。
 
 ---
 

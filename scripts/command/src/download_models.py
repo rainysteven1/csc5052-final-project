@@ -75,7 +75,7 @@ FALLBACK_CONFIG: dict[str, Any] = {
     "models": {
         "1": {
             "repo_id": "onnx-community/whisper-large-v3-turbo",
-            "local_dir": "services/asr/models/onnx-community__whisper-large-v3-turbo",
+            "local_dir": "services/agent/models/asr/onnx-community__whisper-large-v3-turbo",
             "title": "Whisper ONNX",
             "note": "Best CPU default; downloads only the minimal int8 merged-decoder files.",
             "allow_patterns": [
@@ -95,14 +95,14 @@ FALLBACK_CONFIG: dict[str, Any] = {
         },
         "2": {
             "repo_id": "onnx-community/pyannote-segmentation-3.0",
-            "local_dir": "services/asr/models/onnx-community__pyannote-segmentation-3.0",
+            "local_dir": "services/agent/models/asr/onnx-community__pyannote-segmentation-3.0",
             "title": "Segmentation ONNX",
             "note": "CPU-friendly VAD / segmentation.",
             "dynamic_onnx_int8_selection": True,
         },
         "3": {
             "repo_id": "pyannote/segmentation-3.0",
-            "local_dir": "services/asr/models/pyannote__segmentation-3.0",
+            "local_dir": "services/agent/models/asr/pyannote__segmentation-3.0",
             "title": "Segmentation (original)",
             "note": "Requires accepting the gated model terms on Hugging Face and setting HF_TOKEN.",
             "requires_token": True,

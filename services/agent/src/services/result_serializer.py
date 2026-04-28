@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.agent.gen.speaksure.v1 import common_pb2
 from services.agent.src.state import AnalysisState
-from services.gen.speaksure.v1 import common_pb2
 
 
 def _build_payload(state: AnalysisState) -> dict[str, Any]:

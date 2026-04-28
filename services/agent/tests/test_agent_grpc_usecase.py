@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from services.agent.gen.speaksure.v1 import agent_service_pb2, common_pb2
 from services.agent.src.app.usecases.agent_grpc import execute_analysis_via_grpc
-from services.gen.speaksure.v1 import agent_service_pb2, common_pb2
 
 
 def test_execute_analysis_via_grpc_can_fall_back_to_digest(monkeypatch, tmp_path: Path) -> None:

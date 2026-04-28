@@ -6,10 +6,12 @@ import sys
 import wave
 from pathlib import Path
 
+import pytest
+
+from services.agent.src.asr import runtime as asr_service
 from services.agent.src.services.artifact_loader import load_artifacts
 from services.agent.src.state import build_initial_state
 from services.agent.src.workflow import build_inference_workflow
-from services.asr.src import service as asr_service
 
 
 def _write_silence_wav(path: Path, *, sample_rate: int = 16000, duration_seconds: float = 0.25) -> None:
@@ -19,6 +21,11 @@ def _write_silence_wav(path: Path, *, sample_rate: int = 16000, duration_seconds
         handle.setsampwidth(2)
         handle.setframerate(sample_rate)
         handle.writeframes(b"\x00\x00" * frame_count)
+
+
+@pytest.fixture(autouse=True)
+def _disable_runtime_llm(monkeypatch) -> None:
+    monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
 
 
 def test_inference_workflow_runs_with_sidecar_transcript(tmp_path: Path) -> None:
@@ -36,12 +43,19 @@ def test_inference_workflow_runs_with_sidecar_transcript(tmp_path: Path) -> None
 
     assert result.status == "completed"
     assert result.meta["workflow_engine"] == "langgraph"
+    assert result.meta["workflow_nodes"] == ["input", "evidence", "coaching", "finalize"]
+    assert result.meta["workflow_substeps"]["input"] == ["prepare_input", "asr", "segment"]
+    assert result.meta["workflow_substeps"]["coaching"] == ["deterministic_fusion", "llm_coaching"]
     assert result.transcript.startswith("I think")
     assert len(result.segments) >= 2
     assert result.result.segment_results
     assert result.agent_outputs.lexical
     assert result.agent_outputs.prosody
     assert result.agent_outputs.disfluency
+    assert result.agent_outputs.evidence_summary.segment_count >= 2
+    assert result.agent_outputs.evidence_summary.segments
+    assert result.agent_outputs.judgment.summary
+    assert result.agent_outputs.judgment.coaching_focus
     assert result.result.overall_score and result.result.overall_score > 0
     assert "lexical_uncertainty" in result.result.dominant_causes
     assert "disfluency" in result.result.dominant_causes
@@ -104,6 +118,7 @@ def test_inference_workflow_handles_flac_content_with_wav_suffix(tmp_path: Path)
 
 
 def test_inference_workflow_uses_remote_asr_provider_when_configured(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SPEAKSURE_ASR_PROVIDER", raising=False)
     audio_path = tmp_path / "remote.wav"
     config_path = tmp_path / "runtime.toml"
     _write_silence_wav(audio_path)

@@ -1,0 +1,9 @@
+[backend]
+bind = "127.0.0.1:8000"
+python_bin = "python"
+agent_bridge_script = "services/agent/backend_bridge.py"
+agent_config_path = "services/agent/config/config.toml"
+data_root = "services/agent/data"
+jobs_root = "services/backend/data/jobs"
+uploads_root = "services/backend/data/uploads"
+results_root = "services/backend/data/results"

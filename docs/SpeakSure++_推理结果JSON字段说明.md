@@ -84,7 +84,7 @@
 | `segments` | `array` | 切分后的分析片段 | 每个片段带分数、高亮和反馈 |
 | `agent_outputs` | `object` | 各 agent 的结构化输出 | 便于做调试或可视化 |
 | `result` | `object` | 汇总分析结果 | 展示页优先读取 |
-| `warnings` | `array[string]` | 告警信息 | 不一定失败，但表示有降级或兼容逻辑 |
+| `warnings` | `array[string]` | 告警信息 | 不一定失败，但表示有降级或数据异常 |
 | `errors` | `array[string]` | 错误信息 | 一般失败时会出现 |
 | `meta` | `object` | 运行过程附加信息 | 调试字段，扩展性强 |
 
@@ -323,7 +323,7 @@
 - `weights` 决定 lexical / prosody / disfluency 在最终融合中的占比；
 - 当前 `weights.context` 作为配置保留项存在，但还没有单独形成数值型 context score。
 
-### 8.5 `agent_outputs.reasoning`
+### 8.5 `agent_outputs.coaching`
 
 这是融合后的中间汇总结果。
 
@@ -399,7 +399,7 @@
 
 ### `warnings`
 
-表示“任务还能跑完，但有降级、兼容或数据异常”。
+表示“任务还能跑完，但有降级或数据异常”。
 
 常见例子：
 

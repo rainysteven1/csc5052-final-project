@@ -1,5 +1,29 @@
 # SpeakSure++ Node / Rule / Prompt 重构方案
 
+## 0. 答辩速览
+
+如果只看这份文档的一页结论，可以直接看这里。
+
+### 0.1 已完成
+
+- 运行时主链已经收敛为 4 个粗粒度阶段：`input -> evidence -> coaching -> finalize`
+- 规则配置已经迁到 `services/agent/config/rules/`
+- prompt 配置已经迁到 `services/agent/config/prompts/`
+- `services/agent` 主读取结构已经稳定到 `judgment + coaching + feedback`
+- 前端展示、SSE 事件和后端粗节点已经对齐
+
+### 0.2 可选增强
+
+- 把 `lexical / prosody / disfluency` 继续从“规则解释”增强为更完整的 `deterministic extraction + LLM interpretation`
+- 把 provider 策略继续抽象成更统一的配置矩阵
+- 继续加强 coaching / feedback 的 prompt contract 和质量评估
+
+### 0.3 不再适用
+
+- 不再建议保留旧的 11 个物理节点作为对外主展示结构
+- 不再建议把 prompt 或 rule 继续 hard-code 在 Python 代码里
+- 不再建议围绕旧的 `reasoning` 主结构继续做前端或结果契约扩展
+
 ## 1. 文档目标
 
 这份文档把三件事情合并到同一份方案里：
@@ -16,10 +40,50 @@
 - **LLM 更适合作为 judgment / explanation / feedback 层**
 - **prompt 和 rule 都应该文件化配置，不继续硬编码**
 
+## 1.1 当前落地状态（2026-04-27）
+
+这份文档主要描述的主线重构已经落地；下面保留的内容，更多是后续增强方向和历史分析背景，而不是阻塞当前架构的未完成主干。
+
+### 已完成
+
+- [x] LangGraph 主流程已经从细节点收敛为 4 个物理大节点：
+  - `input`
+  - `evidence`
+  - `coaching`
+  - `finalize`
+- [x] `lexical / disfluency / prosody / context / scoring / feedback fallback` 已迁移到 `services/agent/config/rules/`
+- [x] 已新增 `services/agent/src/backend/tools/rule_loader.py`
+- [x] `judgment / coaching / feedback / json_repair` prompt 已文件化并由 loader 驱动
+- [x] `lexical / prosody / disfluency / coaching` prompt 模板与 loader key 已加入配置体系
+- [x] 前端展示和后端事件流已经按粗粒度节点对齐，支持 substep 展示
+- [x] `coaching` 已成为运行时唯一统一综合节点，`judgment / feedback` 作为内部步骤由 `coaching` 串联调用
+- [x] 前端主读取结构已经收敛到 `judgment + coaching + feedback`，运行时已经彻底切换到 `judgment + coaching + feedback` 结构
+
+### 已落地但仍可继续增强
+
+- [~] `lexical / disfluency / prosody / context` 已经从“硬编码常量”升级为“配置驱动规则”，并且 `lexical / disfluency / prosody` 已进入第一版 **deterministic evidence + LLM interpretation**，但还没有把更高阶的裁决逻辑进一步统一
+- [~] `coaching` 已经收敛为运行时唯一的统一综合节点：先做 deterministic fusion，再用一套 coaching prompt 做可选 LLM overlay；`judgment_node.py / feedback_node.py` 作为内部 helper 被 `coaching` 调用
+
+### 可选增强项
+
+- `lexical / disfluency / prosody` 的 evidence-to-LLM 解释链路目前是第一版，可继续增强 prompt contract、质量评估和 provider 策略
+- evidence 模块后续还可以继续向 “deterministic extraction + LLM interpretation” 统一模式收敛
+- 个别历史路径示例可能仍带旧目录名，阅读时应以当前代码目录 `services/agent/src/backend/` 为准
+- provider 策略后续还可以继续抽象成更完整的可插拔配置矩阵
+
+### 1.2 阅读方式
+
+这份文档后面的章节以“历史问题分析 + 重构理由 + 可选增强方向”为主。
+
+如果你的目标是快速判断“现在系统是不是已经完成主干重构”，答案是：
+
+- **是，主干已经完成**
+- **后面的内容主要是解释为什么这么改，以及后续如果继续升级可以怎么做**
+
 
 ## 2. 当前问题总结
 
-### 2.1 当前 11 个节点过细
+### 2.1 历史上的 11 个节点过细
 
 当前运行时暴露的节点是：
 
@@ -31,8 +95,8 @@
 6. `disfluency`
 7. `context`
 8. `merge_analysis`
-9. `reasoning`
-10. `feedback`
+9. `judgment`
+10. `coaching`
 11. `serialize_result`
 
 这个拆法更像“工程实现图”，不是“业务推理图”。
@@ -64,11 +128,11 @@
 
 ### 2.3 当前 prompt 已部分配置化，但规则没有配置化
 
-目前 `reasoning / feedback / json_repair` 已经走配置文件：
+目前 `judgment / coaching / feedback / json_repair` 已经走配置文件：
 
 - `services/agent/config/config.toml`
 - `services/agent/config/prompts/*.md`
-- `services/agent/src/services/agent/tools/prompt_loader.py`
+- `services/agent/src/backend/tools/prompt_loader.py`
 
 但以下内容还大量硬编码在 Python 里：
 
@@ -91,7 +155,7 @@
 
 当前文件：
 
-- `services/agent/src/services/agent/nodes/lexical_node.py`
+- `services/agent/src/backend/nodes/lexical_node.py`
 
 当前硬编码内容：
 
@@ -111,7 +175,7 @@
 
 当前文件：
 
-- `services/agent/src/services/agent/nodes/disfluency_node.py`
+- `services/agent/src/backend/nodes/disfluency_node.py`
 
 当前硬编码内容：
 
@@ -131,7 +195,7 @@
 
 当前文件：
 
-- `services/agent/src/services/agent/nodes/prosody_node.py`
+- `services/agent/src/backend/nodes/prosody_node.py`
 
 当前硬编码内容：
 
@@ -151,7 +215,7 @@
 
 当前文件：
 
-- `services/agent/src/services/agent/nodes/context_node.py`
+- `services/agent/src/backend/nodes/context_node.py`
 
 当前硬编码内容：
 
@@ -166,17 +230,17 @@
 
 当前文件：
 
-- `services/agent/src/services/agent/nodes/reasoning_node.py`
-- `services/agent/src/services/agent/nodes/feedback_node.py`
+- `services/agent/src/backend/nodes/judgment_node.py`
+- `services/agent/src/backend/nodes/feedback_node.py`
 
 这里已经比前面好很多，因为 prompt 已经外置：
 
-- `services/agent/config/prompts/reasoning_system.md`
-- `services/agent/config/prompts/reasoning_user.md`
+- `services/agent/config/prompts/judgment_system.md`
+- `services/agent/config/prompts/judgment_user.md`
 - `services/agent/config/prompts/feedback_system.md`
 - `services/agent/config/prompts/feedback_user.md`
 
-但是后续如果要把 lexical / prosody / disfluency 也 LLM 化，就不能只配置 reasoning / feedback，必须把整套 prompt 体系扩展出去。
+但是后续如果要把 lexical / prosody / disfluency 也 LLM 化，就不能只配置 judgment / feedback，必须把整套 prompt 体系扩展出去。
 
 
 ## 4. 推荐的后端节点重构方向
@@ -236,7 +300,7 @@
 
 内部包含：
 
-- `reasoning`
+- `coaching`
 - `feedback`
 
 职责：
@@ -530,7 +594,7 @@
 当前已经存在：
 
 - `services/agent/config/config.toml`
-- `services/agent/src/services/agent/tools/prompt_loader.py`
+- `services/agent/src/backend/tools/prompt_loader.py`
 
 这套机制已经证明可行。
 
@@ -561,8 +625,8 @@ context_provider = "hybrid"
 coaching_provider = "llm"
 
 [speaksure.rules]
-lexical_rules = "rules/lexical_rules.yaml"
-disfluency_rules = "rules/disfluency_rules.yaml"
+lexical_rules = "rules/lexical_rules.toml"
+disfluency_rules = "rules/disfluency_rules.toml"
 prosody_rules = "rules/prosody_rules.toml"
 context_defaults = "rules/context_defaults.toml"
 
@@ -582,28 +646,27 @@ json_repair_user = "prompts/json_repair_user.md"
 
 ## 9.2 Lexical rule 文件建议
 
-建议新建：
+当前已落地文件：
 
-- `services/agent/config/rules/lexical_rules.yaml`
+- `services/agent/config/rules/lexical_rules.toml`
 
 示例：
 
-```yaml
-rules:
-  - phrase: "i think"
-    weight: 0.24
-    category: "weak_commitment"
-    explanation: "出现弱承诺表达，陈述显得不够直接。"
+```toml
+[[rules]]
+phrase = "i think"
+weight = 0.24
+explanation = "出现弱承诺表达，陈述显得不够直接。"
 
-  - phrase: "maybe"
-    weight: 0.22
-    category: "uncertainty"
-    explanation: "出现模糊词，降低了表达确定性。"
+[[rules]]
+phrase = "maybe"
+weight = 0.22
+explanation = "出现模糊词，降低了表达确定性。"
 
-  - phrase: "我觉得"
-    weight: 0.24
-    category: "weak_commitment"
-    explanation: "出现主观弱承诺表达，显得不够直接。"
+[[rules]]
+phrase = "我觉得"
+weight = 0.24
+explanation = "出现主观弱承诺表达，显得不够直接。"
 ```
 
 注意：
@@ -614,34 +677,35 @@ rules:
 
 ## 9.3 Disfluency rule 文件建议
 
-建议新建：
+当前已落地文件：
 
-- `services/agent/config/rules/disfluency_rules.yaml`
+- `services/agent/config/rules/disfluency_rules.toml`
 
 示例：
 
-```yaml
-fillers:
-  - label: "um"
-    pattern: "\\bum\\b"
-    weight: 0.12
-  - label: "uh"
-    pattern: "\\buh\\b"
-    weight: 0.12
-  - label: "嗯"
-    pattern: "嗯+"
-    weight: 0.12
+```toml
+[[filler_patterns]]
+label = "um"
+pattern = "\\bum\\b"
 
-self_repairs:
-  - label: "i mean"
-    pattern: "\\bi mean\\b"
-    weight: 0.16
-  - label: "不是"
-    pattern: "不是"
-    weight: 0.16
+[[filler_patterns]]
+label = "uh"
+pattern = "\\buh\\b"
 
-repetition:
-  repeated_token_weight: 0.18
+[[filler_patterns]]
+label = "嗯"
+pattern = "嗯+"
+
+[[self_repair_patterns]]
+label = "i mean"
+pattern = "\\bi mean\\b"
+
+[[self_repair_patterns]]
+label = "不是"
+pattern = "不是"
+
+[scoring]
+repetition_weight = 0.18
 ```
 
 
@@ -689,7 +753,8 @@ penalty = 0.08
 
 目前已经配置化的 prompt：
 
-- reasoning
+- judgment
+- coaching
 - feedback
 - json repair
 
@@ -698,12 +763,12 @@ penalty = 0.08
 - lexical
 - prosody
 - disfluency
-- coaching（如果合并 reasoning + feedback）
+- coaching（统一承载 judgment + feedback）
 
 
 ## 10.1 新 prompt 目录建议
 
-建议新增：
+当前已新增：
 
 - `services/agent/config/prompts/lexical_system.md`
 - `services/agent/config/prompts/lexical_user.md`
@@ -782,7 +847,7 @@ penalty = 0.08
 内部过程：
 
 - lexical / prosody / disfluency interpretation
-- overall reasoning
+- overall judgment
 - summary
 - dominant causes
 - feedback
@@ -819,12 +884,12 @@ penalty = 0.08
 
 ## 12.2 节点实现
 
-建议新增大节点文件，例如：
+当前已经直接在 `services/agent/src/orchestration/graph_builder.py` 中实现 coarse-grained stage node：
 
-- `services/agent/src/services/agent/nodes/input_node.py`
-- `services/agent/src/services/agent/nodes/evidence_node.py`
-- `services/agent/src/services/agent/nodes/coaching_node.py`
-- `services/agent/src/services/agent/nodes/finalize_node.py`
+- `input`
+- `evidence`
+- `coaching`
+- `finalize`
 
 旧的小节点可以逐步转成 helper：
 
@@ -836,9 +901,9 @@ penalty = 0.08
 
 ## 12.3 配置加载
 
-建议新增：
+当前已新增：
 
-- `services/agent/src/services/agent/tools/rule_loader.py`
+- `services/agent/src/backend/tools/rule_loader.py`
 
 职责：
 
@@ -850,23 +915,24 @@ penalty = 0.08
 
 ## 12.4 Prompt 加载
 
-建议扩展：
+当前已扩展：
 
-- `services/agent/src/services/agent/tools/prompt_loader.py`
+- `services/agent/src/backend/tools/prompt_loader.py`
 
 增加：
 
 - lexical / prosody / disfluency / coaching prompt key
+- lexical_repair_schema
 
 
 ## 12.5 前端
 
 后续要同步修改：
 
-- `services/agent/frontend/src/types/analysis.ts`
-- `services/agent/frontend/src/lib/analysis-helpers.ts`
-- `services/agent/frontend/src/store/analysis-store.ts`
-- `services/agent/frontend/src/components/pipeline/*`
+- `services/frontend/src/types/analysis.ts`
+- `services/frontend/src/lib/analysis-helpers.ts`
+- `services/frontend/src/store/analysis-store.ts`
+- `services/frontend/src/components/pipeline/*`
 
 从 11 node 视角改成 4 node 视角。
 
@@ -890,6 +956,11 @@ penalty = 0.08
 ### 第二步：扩展 prompt 配置体系
 
 把 lexical / prosody / disfluency / coaching 的 prompt 也纳入配置体系。
+
+当前状态：
+
+- `lexical / disfluency / prosody` 已进入第一版真实接线
+- `coaching` 已进入 unified overlay 阶段，但还不是最终的唯一统一裁决节点
 
 
 ### 第三步：把 rule 从“裁决层”改成“证据层”
@@ -970,4 +1041,3 @@ penalty = 0.08
 ## 15. 建议的最终方向（一句话）
 
 **把后端改成 4 个 coarse-grained LangGraph 节点，把 rule 下沉为可配置 evidence extractor，把 judgment 和 feedback 上移为 LLM + prompt 配置驱动。**
-

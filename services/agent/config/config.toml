@@ -3,29 +3,24 @@ seed = 42
 [speaksure.runtime]
 config_version = "speaksure-runtime-v1"
 context_provider = "config"
+coaching_provider = "hybrid"
 asr_provider = "local"
 asr_backend = "onnx"
 # asr_backend = "grpc"
 asr_backend_grpc_target = "127.0.0.1:50052"
-asr_onnx_model_dir = "services/asr/models/onnx-community__whisper-large-v3-turbo"
+asr_onnx_model_dir = "services/agent/models/asr/onnx-community__whisper-large-v3-turbo"
 asr_grpc_target = "127.0.0.1:50052"
 agent_grpc_bind = "127.0.0.1:50051"
 asr_grpc_bind = "127.0.0.1:50052"
-agent_http_bind = "127.0.0.1:8000"
-# Monolith in-process mode:
+# Local in-process mode:
 # asr_provider = "local"
 # asr_backend = "onnx"
 # Preferred microservice mode:
-# asr_provider = "grpc"
-#
-# Legacy direct HTTP mode to a teammate-owned ASR service:
-# asr_provider = "api"
-# asr_api_url = "http://127.0.0.1:8000/transcribe"
 #
 # Suggested gRPC binds for local microservices:
 # agent_grpc_target = "127.0.0.1:50051"
 #
-# MiniMax reasoning/feedback uses env vars:
+# MiniMax judgment/coaching/feedback uses env vars:
 # MINIMAX_API_KEY=...
 # MINIMAX_BASE_URL=...
 # SPEAKSURE_LLM_MODEL=MiniMax-M2.7
@@ -38,14 +33,34 @@ project = "speaksure-runtime"
 mode = "online"
 
 [speaksure.prompts]
-reasoning_system = "prompts/reasoning_system.md"
-reasoning_user = "prompts/reasoning_user.md"
+lexical_system = "prompts/lexical_system.md"
+lexical_user = "prompts/lexical_user.md"
+prosody_system = "prompts/prosody_system.md"
+prosody_user = "prompts/prosody_user.md"
+disfluency_system = "prompts/disfluency_system.md"
+disfluency_user = "prompts/disfluency_user.md"
+coaching_system = "prompts/coaching_system.md"
+coaching_user = "prompts/coaching_user.md"
+lexical_repair_schema = "prompts/schemas/lexical_result.json"
+disfluency_repair_schema = "prompts/schemas/disfluency_result.json"
+prosody_repair_schema = "prompts/schemas/prosody_result.json"
+coaching_repair_schema = "prompts/schemas/coaching_result.json"
+judgment_system = "prompts/judgment_system.md"
+judgment_user = "prompts/judgment_user.md"
 feedback_system = "prompts/feedback_system.md"
 feedback_user = "prompts/feedback_user.md"
 json_repair_system = "prompts/json_repair_system.md"
 json_repair_user = "prompts/json_repair_user.md"
-reasoning_repair_schema = "prompts/schemas/reasoning_result.json"
+judgment_repair_schema = "prompts/schemas/judgment_result.json"
 feedback_repair_schema = "prompts/schemas/feedback_segments_result.json"
+
+[speaksure.rules]
+lexical_rules = "rules/lexical_rules.toml"
+disfluency_rules = "rules/disfluency_rules.toml"
+prosody_rules = "rules/prosody_rules.toml"
+context_defaults = "rules/context_defaults.toml"
+scoring_rules = "rules/scoring_rules.toml"
+feedback_fallback_rules = "rules/feedback_fallback_rules.toml"
 
 [speaksure.contexts.interview.weights]
 lexical = 0.35

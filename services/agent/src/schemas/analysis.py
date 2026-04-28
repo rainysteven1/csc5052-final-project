@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
-
 from pydantic import BaseModel, Field
+
 
 
 def utc_now_iso() -> str:
@@ -74,6 +73,11 @@ class LexicalOutput(BaseModel):
     score: float | None = None
     triggers: list[str] = Field(default_factory=list)
     explanations: list[str] = Field(default_factory=list)
+    interpretation: str | None = None
+    rewrite_hint: str | None = None
+    practice_hint: str | None = None
+    provider: str | None = None
+    model: str | None = None
 
 
 class ProsodyOutput(BaseModel):
@@ -81,6 +85,11 @@ class ProsodyOutput(BaseModel):
     score: float | None = None
     features: dict[str, float] = Field(default_factory=dict)
     explanations: list[str] = Field(default_factory=list)
+    interpretation: str | None = None
+    coaching_hint: str | None = None
+    feedback_focus: str | None = None
+    provider: str | None = None
+    model: str | None = None
 
 
 class DisfluencyIssue(BaseModel):
@@ -94,12 +103,59 @@ class DisfluencyOutput(BaseModel):
     score: float | None = None
     issues: list[DisfluencyIssue] = Field(default_factory=list)
     explanations: list[str] = Field(default_factory=list)
+    interpretation: str | None = None
+    practice_hint: str | None = None
+    feedback_focus: str | None = None
+    provider: str | None = None
+    model: str | None = None
 
 
 class ContextOutput(BaseModel):
     scenario: str = ""
     weights: dict[str, float] = Field(default_factory=dict)
     style_constraints: list[str] = Field(default_factory=list)
+
+
+class SegmentEvidenceSummary(BaseModel):
+    segment_id: str
+    text: str = ""
+    token_count: int = 0
+    pause_before: float | None = None
+    scores: dict[str, float | None] = Field(default_factory=dict)
+    lexical_triggers: list[str] = Field(default_factory=list)
+    prosody_explanations: list[str] = Field(default_factory=list)
+    disfluency_issues: list[str] = Field(default_factory=list)
+    highlight_count: int = 0
+    dominant_signals: list[str] = Field(default_factory=list)
+
+
+class EvidenceSignalCount(BaseModel):
+    label: str
+    count: int = 0
+
+
+class EvidenceHotspot(BaseModel):
+    segment_id: str
+    score: float = 0.0
+    reasons: list[str] = Field(default_factory=list)
+
+
+class EvidenceSummary(BaseModel):
+    version: str = "v1"
+    scenario: str = ""
+    segment_count: int = 0
+    average_scores: dict[str, float] = Field(default_factory=dict)
+    trigger_count: int = 0
+    disfluency_issue_count: int = 0
+    context_weights: dict[str, float] = Field(default_factory=dict)
+    style_constraints: list[str] = Field(default_factory=list)
+    segments: list[SegmentEvidenceSummary] = Field(default_factory=list)
+    signal_overview: list[str] = Field(default_factory=list)
+    dominant_dimensions: list[str] = Field(default_factory=list)
+    top_lexical_triggers: list[EvidenceSignalCount] = Field(default_factory=list)
+    top_disfluency_patterns: list[EvidenceSignalCount] = Field(default_factory=list)
+    prosody_hotspots: list[EvidenceHotspot] = Field(default_factory=list)
+    risk_segments: list[EvidenceHotspot] = Field(default_factory=list)
 
 
 class FeedbackOutput(BaseModel):
@@ -112,12 +168,34 @@ class FeedbackOutput(BaseModel):
     practice_steps: list[str] = Field(default_factory=list)
 
 
+class JudgmentOutput(BaseModel):
+    summary: str | None = None
+    dominant_causes: list[str] = Field(default_factory=list)
+    coaching_focus: list[str] = Field(default_factory=list)
+    risk_segments: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    overall_score: float | None = None
+    level: str | None = None
+    provider: str | None = None
+    model: str | None = None
+
+
+class CoachingOutput(BaseModel):
+    summary: str | None = None
+    coaching_focus: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    provider: str | None = None
+    model: str | None = None
+
+
 class AgentOutputs(BaseModel):
     lexical: list[LexicalOutput] = Field(default_factory=list)
     prosody: list[ProsodyOutput] = Field(default_factory=list)
     disfluency: list[DisfluencyOutput] = Field(default_factory=list)
     context: ContextOutput = Field(default_factory=ContextOutput)
-    reasoning: dict[str, Any] = Field(default_factory=dict)
+    evidence_summary: EvidenceSummary = Field(default_factory=EvidenceSummary)
+    judgment: JudgmentOutput = Field(default_factory=JudgmentOutput)
+    coaching: CoachingOutput = Field(default_factory=CoachingOutput)
     feedback: list[FeedbackOutput] = Field(default_factory=list)
 
 

@@ -15,10 +15,9 @@ from services.agent.src.config import (
 from services.agent.src.services.artifact_loader import (
     load_artifacts,
     resolve_agent_grpc_bind,
-    resolve_agent_http_bind,
     resolve_asr_grpc_bind,
 )
-from services.asr.src.backend import resolve_asr_backend_config
+from services.agent.src.asr.config import resolve_asr_backend_config
 
 
 def test_load_config_reads_runtime_settings() -> None:
@@ -46,14 +45,15 @@ def test_default_config_path_points_to_service_config() -> None:
     assert default_config_path() == service_root() / "config" / "config.toml"
 
 
-def test_load_artifacts_stub_warning_mentions_manifest_fallback() -> None:
+def test_load_artifacts_uses_configured_local_asr_by_default() -> None:
     artifacts = load_artifacts()
 
-    assert artifacts.warnings
-    assert "manifest" in artifacts.warnings[0]
+    assert artifacts.metadata.providers["asr"] == "local"
+    assert artifacts.warnings == []
 
 
-def test_load_artifacts_warns_when_api_provider_has_no_url(tmp_path: Path) -> None:
+def test_load_artifacts_warns_when_api_provider_has_no_url(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SPEAKSURE_ASR_PROVIDER", raising=False)
     config_path = tmp_path / "runtime.toml"
     config_path.write_text(
         """
@@ -69,7 +69,8 @@ asr_provider = "api"
     assert "asr_api_url" in artifacts.warnings[0]
 
 
-def test_load_artifacts_warns_when_grpc_provider_has_no_target(tmp_path: Path) -> None:
+def test_load_artifacts_warns_when_grpc_provider_has_no_target(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SPEAKSURE_ASR_PROVIDER", raising=False)
     config_path = tmp_path / "runtime.toml"
     config_path.write_text(
         """
@@ -110,7 +111,7 @@ def test_resolve_asr_backend_config_reads_static_runtime_backend(tmp_path: Path)
 [speaksure.runtime]
 asr_backend = "onnx"
 asr_backend_grpc_target = "127.0.0.1:60052"
-asr_onnx_model_dir = "services/asr/models/whisper"
+asr_onnx_model_dir = "services/agent/models/asr/whisper"
 """.strip(),
         encoding="utf-8",
     )
@@ -119,13 +120,12 @@ asr_onnx_model_dir = "services/asr/models/whisper"
 
     assert backend.backend == "onnx"
     assert backend.grpc_target == "127.0.0.1:60052"
-    assert backend.onnx_model_dir == "services/asr/models/whisper"
+    assert backend.onnx_model_dir == "services/agent/models/asr/whisper"
 
 
 def test_resolve_grpc_binds_fall_back_to_defaults() -> None:
     assert resolve_agent_grpc_bind() == "127.0.0.1:50051"
     assert resolve_asr_grpc_bind() == "127.0.0.1:50052"
-    assert resolve_agent_http_bind() == "127.0.0.1:8000"
 
 
 def test_resolve_grpc_binds_from_config(tmp_path: Path) -> None:
@@ -135,11 +135,9 @@ def test_resolve_grpc_binds_from_config(tmp_path: Path) -> None:
 [speaksure.runtime]
 agent_grpc_bind = "0.0.0.0:60051"
 asr_grpc_bind = "0.0.0.0:60052"
-agent_http_bind = "0.0.0.0:60080"
 """.strip(),
         encoding="utf-8",
     )
 
     assert resolve_agent_grpc_bind(config_path) == "0.0.0.0:60051"
     assert resolve_asr_grpc_bind(config_path) == "0.0.0.0:60052"
-    assert resolve_agent_http_bind(config_path) == "0.0.0.0:60080"

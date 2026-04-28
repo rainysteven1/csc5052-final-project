@@ -1,0 +1,27 @@
+[speech_rate]
+slow_threshold = 2.0
+slow_weight = 0.18
+slow_cap = 0.35
+slow_explanation = "语速偏慢，表达显得不够利落。"
+fast_threshold = 4.8
+fast_weight = 0.08
+fast_cap = 0.20
+fast_explanation = "语速偏快，语流稳定性可能下降。"
+
+[pause]
+threshold = 0.5
+weight = 0.25
+cap = 0.25
+explanation = "句前停顿偏长，影响表达连贯性。"
+
+[energy]
+flat_threshold = 0.05
+min_duration = 0.5
+penalty = 0.12
+explanation = "能量变化较平，听感上略显平。"
+
+[pitch]
+flat_threshold = 0.01
+min_duration = 0.5
+penalty = 0.08
+explanation = "音高变化较少，表达起伏不足。"
